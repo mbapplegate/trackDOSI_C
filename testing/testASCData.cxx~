@@ -1,0 +1,15 @@
+//Testing the readASC Data class and functions
+
+#include <iostream>
+#include "ASCData.h"
+#include <string>
+
+int main(void){
+
+  std::string fname = "../exampleData/ACRIN9-000.asc";
+
+  ASCData a1 = ASCData(fname);
+
+  return 0;
+}
+  

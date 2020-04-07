@@ -1,0 +1,22 @@
+//Header file for ASCData defines the class that will be used to parse data from ASC Files
+
+#ifndef ASCDATA_H
+#define ASCDATA_H
+
+class ASCData {
+
+ public:
+
+  std::vector<int> freq;
+  std::vector<float> phase;
+  std::vector<float> amp;
+  std::vector<float> wavelengths;
+  int nDiodes;
+  int SDSep;
+  float posX;
+  float posY;
+  float Theta;
+  float Phi;
+
+}
+#endif

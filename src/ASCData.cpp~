@@ -1,0 +1,8 @@
+//Class that defines data coming from outside ASC files
+
+#include "ASCData.h"
+
+ASCData::ASCData()
+{
+
+}
