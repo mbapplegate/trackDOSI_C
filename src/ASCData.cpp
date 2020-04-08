@@ -1,6 +1,7 @@
 //Class that defines data coming from outside ASC files
 
 #include "ASCData.h"
+#include "utilities.h"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -157,10 +158,25 @@ ASCData averageASCData(std::string dName, std::string fStr) {
 
   std::vector<boost::filesystem::path> fList;
   boost::filesystem::path root = dName;
-
+  //std::cout << root.native() << std::endl;
   getFiles(root, fStr, fList);
-  ASCData a1;
-  return a1;
+  std::cout << fList[0].native() << std::endl;
+  ASCData *a1 = new ASCData[fList.size()];
+  ASCData ret = getASCData(fList[0].native());
+  std::vector<float> runSumAmp(fList.size(), 0.0);
+  std::vector<float> runSumPhase(fList.size(), 0.0);
+  for (size_t i = 0; i< fList.size(); i++) {
+    ASCData thisDat = getASCData(fList[i].native());
+    runSumAmp=sumVecs(thisDat.amp, runSumAmp);
+    runSumPhase = sumVecs(thisDat.phase, runSumPhase);
+  }
+  //ASCData a2 = getASCData(fList[0].native());
+  //ASCData a3 = getASCData(fList[1].native());
+  ret.amp = divVecs(runSumAmp,(float)fList.size());
+  ret.phase = divVecs(runSumPhase,(float)fList.size());
+  //std::vector<float> a4 = sumVecs(a2.amp,a3.amp);
+  delete[] a1;
+  return ret;
 }
 
 

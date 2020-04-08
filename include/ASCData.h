@@ -27,5 +27,5 @@ struct ASCData {
 ASCData getASCData(std::string);
 ASCData stripNaNFreqs(ASCData);
 void getFiles(boost::filesystem::path, std::string, std::vector<boost::filesystem::path>&);
-ASCData averageASCData(std::string);
+ASCData averageASCData(std::string,std::string);
 #endif
