@@ -10,7 +10,7 @@ LINKFLAGS = $(addprefix -l,$(LIBS))
 CC=g++
 SRCDIR := src
 BUILDDIR := build
-TARGET := bin/trackDOSIC
+TARGET := bin/trackDOSIC.out
 
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
@@ -33,6 +33,6 @@ clean:
 	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
 
 testing: $(OBJECTS)
-	$(CC) $^ $(CFLAGS) testing/testASCData.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testASCData
+	$(CC) $^ $(CFLAGS) testing/testASCData.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testASCData.out
 
 .PHONY: clean testing
