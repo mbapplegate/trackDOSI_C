@@ -33,7 +33,7 @@ int main(void){
   std::cout << a1.numFreqs << std::endl;
 
   std::vector<boost::filesystem::path> files;
-  std::string root = "exampleData";
+  boost::filesystem::path root = "exampleData";
   std::string ext = "Acrin9-";
   //getFiles(root,ext, files);
   ASCData avg = averageASCData(root,ext);
@@ -41,7 +41,7 @@ int main(void){
    for (int i = 0; i<avg.numFreqs; i++) {
     std::cout << avg.freqs[i] << ": ";
     for (int j = 0; j<avg.nDiodes; j++) {
-      std::cout << avg.amp[i*avg.nDiodes + j] << ", ";
+      std::cout << avg.phase[i*avg.nDiodes + j] << ", ";
     }
     std::cout << std::endl;
   }

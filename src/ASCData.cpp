@@ -130,7 +130,7 @@ ASCData stripNaNFreqs(ASCData dat) {
       // std::cout << thisAmp[j] << std::endl;
       if (std::isnan(thisAmp[j])) {
 	nanRows.push_back(i);
-	std::cout << "Has Nans" <<std::endl;
+	//std::cout << "Has Nans" <<std::endl;
 	break;
       }
     }
@@ -154,19 +154,26 @@ ASCData stripNaNFreqs(ASCData dat) {
 
 //Function to average a bunch of raw data from ASC files. Used to get IRF
 ///////ONLY WORKS ON POSIX SYSTEMS//////////////////
-ASCData averageASCData(std::string dName, std::string fStr) {
+ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
 
   std::vector<boost::filesystem::path> fList;
-  boost::filesystem::path root = dName;
-  //std::cout << root.native() << std::endl;
-  getFiles(root, fStr, fList);
+  //boost::filesystem::path root = dName;
+ 
+  getFiles(dName, fStr, fList);
   std::cout << fList[0].native() << std::endl;
+  boost::filesystem::path fullFile;
+  fullFile = dName / fList[0];
+  std::cout << fullFile.native() << std::endl;
   ASCData *a1 = new ASCData[fList.size()];
-  ASCData ret = getASCData(fList[0].native());
-  std::vector<float> runSumAmp(fList.size(), 0.0);
-  std::vector<float> runSumPhase(fList.size(), 0.0);
+  ASCData ret = getASCData(fullFile.native());
+  ret = stripNaNFreqs(ret);
+  std::vector<float> runSumAmp(ret.amp.size(), 0.0);
+  std::vector<float> runSumPhase(ret.phase.size(), 0.0);
+  //  std::cout << runSumAmp.size() << std::endl;
   for (size_t i = 0; i< fList.size(); i++) {
-    ASCData thisDat = getASCData(fList[i].native());
+    fullFile = dName / fList[i];
+    ASCData thisDat = getASCData(fullFile.native());
+    thisDat = stripNaNFreqs(thisDat);
     runSumAmp=sumVecs(thisDat.amp, runSumAmp);
     runSumPhase = sumVecs(thisDat.phase, runSumPhase);
   }
