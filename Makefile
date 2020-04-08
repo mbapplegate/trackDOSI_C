@@ -1,7 +1,9 @@
 IDIR=include
 IOPENCVDIR=/home/matthew/opencv/installation/openCV-master/include/opencv4/
-LIBDIR=/home/matthew/opencv/installation/openCV-master/lib/
-LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio
+IBOOSTDIR=/usr/include/boost/
+LIBDIR_OCV=/home/matthew/opencv/installation/openCV-master/lib/
+LIBDIR_BOOST=/usr/lib/
+LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem
 
 LINKFLAGS = $(addprefix -l,$(LIBS))
 
@@ -15,8 +17,8 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall
 
-INC := -I$(IDIR) -I$(IOPENCVDIR)
-LIB := -L$(LIBDIR)
+INC := -I$(IDIR) -I$(IOPENCVDIR) -I$(IBOOSTDIR)
+LIB := -L$(LIBDIR_OCV) -L$(LIBDIR_BOOST)
 
 $(TARGET) : $(OBJECTS)
 	@echo " Linking. . ."

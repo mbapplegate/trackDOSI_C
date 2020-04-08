@@ -3,6 +3,8 @@
 #include <iostream>
 #include "ASCData.h"
 #include <string>
+#include <boost/filesystem.hpp>
+
 
 int main(void){
 
@@ -29,6 +31,15 @@ int main(void){
   }
   
   std::cout << a1.numFreqs << std::endl;
+
+  std::vector<boost::filesystem::path> files;
+  boost::filesystem::path root = "exampleData";
+  std::string ext = "Acrin9-";
+  getFiles(root,ext, files);
+
+  for (int i =0; i<files.size(); i++) {
+    std::cout << files[i].native() << std::endl;
+  }
   return 0;
 }
   

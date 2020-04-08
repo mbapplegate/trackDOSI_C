@@ -3,9 +3,12 @@
 #include "ASCData.h"
 #include <fstream>
 #include <iostream>
-#include <string>
-#include<cmath>
-
+#include <cmath>
+#include <dirent.h>
+#include <sys/types.h>
+#define BOOST_FILESYSTEM_VERSION 3
+#define BOOST_FILESYSTEM_NO_DEPRECATED 
+#include <boost/filesystem.hpp>
 //This constructor parses the ASC file in question and fills in the appropriate
 //fields
 ASCData getASCData(std::string fname)
@@ -117,14 +120,10 @@ ASCData getASCData(std::string fname)
 
 ASCData stripNaNFreqs(ASCData dat) {
 
-  std::vector<float> noNaNPhase;
-  std::vector<float> noNaNAmp;
-  std::vector<int> noNaNFreq;
-  int hasNans;
+ 
   std::vector<int> nanRows;
   for (int i = 0; i < dat.numFreqs; i++) {
     std::vector<float> thisAmp(dat.amp.begin()+(i*dat.nDiodes), dat.amp.begin()+(i+1)*dat.nDiodes);
-    hasNans = 0;
     //std::cout << thisAmp[0] << std::endl;
     for (int j = 0; j< dat.nDiodes; j++) {
       // std::cout << thisAmp[j] << std::endl;
@@ -148,4 +147,41 @@ ASCData stripNaNFreqs(ASCData dat) {
   }
   dat.numFreqs = dat.freqs.size();
   return dat;
+}
+
+
+
+//Function to average a bunch of raw data from ASC files. Used to get IRF
+///////ONLY WORKS ON POSIX SYSTEMS//////////////////
+ASCData averageASCData(std::string dName, std::string fStr) {
+
+  std::vector<boost::filesystem::path> fList;
+  boost::filesystem::path root = dName;
+
+  getFiles(root, fStr, fList);
+  ASCData a1;
+  return a1;
+}
+
+
+// return the filenames of all files that have the specified extension
+// in the specified directory and all subdirectories
+void getFiles(boost::filesystem::path root, std::string fname, std::vector<boost::filesystem::path>& ret)
+{
+  if(!boost::filesystem::exists(root) || !boost::filesystem::is_directory(root)){
+    return;
+  }
+  boost::filesystem::directory_iterator it(root);
+  boost::filesystem::directory_iterator endit;
+  std::string testName;
+  while(it != endit) {
+    if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".asc") {
+      testName = it->path().filename().native();
+      if (testName.find(fname) != std::string::npos) {
+	ret.push_back(it->path().filename());
+      }
+    }
+    ++it;
+
+  }
 }

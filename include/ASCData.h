@@ -4,6 +4,7 @@
 #define ASCDATA_H
 #include <vector>
 #include <string>
+#include <boost/filesystem.hpp>
 //#include <iostream>
 //#include <stdio.h>
 struct ASCData {
@@ -23,6 +24,8 @@ struct ASCData {
 };
 
 
-ASCData  getASCData(std::string);
+ASCData getASCData(std::string);
 ASCData stripNaNFreqs(ASCData);
+void getFiles(boost::filesystem::path, std::string, std::vector<boost::filesystem::path>&);
+ASCData averageASCData(std::string);
 #endif
