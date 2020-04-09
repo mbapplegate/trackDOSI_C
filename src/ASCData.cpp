@@ -120,8 +120,6 @@ ASCData getASCData(std::string fname)
 }
 
 ASCData stripNaNFreqs(ASCData dat) {
-
- 
   std::vector<int> nanRows;
   for (int i = 0; i < dat.numFreqs; i++) {
     std::vector<float> thisAmp(dat.amp.begin()+(i*dat.nDiodes), dat.amp.begin()+(i+1)*dat.nDiodes);
@@ -153,7 +151,7 @@ ASCData stripNaNFreqs(ASCData dat) {
 
 
 //Function to average a bunch of raw data from ASC files. Used to get IRF
-///////ONLY WORKS ON POSIX SYSTEMS//////////////////
+
 ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
 
   std::vector<boost::filesystem::path> fList;
@@ -187,8 +185,8 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
 }
 
 
-// return the filenames of all files that have the specified extension
-// in the specified directory and all subdirectories
+// return the filenames of all files that have the string fname
+// in the specified directory
 void getFiles(boost::filesystem::path root, std::string fname, std::vector<boost::filesystem::path>& ret)
 {
   if(!boost::filesystem::exists(root) || !boost::filesystem::is_directory(root)){
@@ -205,6 +203,5 @@ void getFiles(boost::filesystem::path root, std::string fname, std::vector<boost
       }
     }
     ++it;
-
   }
 }

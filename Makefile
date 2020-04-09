@@ -3,7 +3,7 @@ IOPENCVDIR=/home/matthew/opencv/installation/openCV-master/include/opencv4/
 IBOOSTDIR=/usr/include/boost/
 LIBDIR_OCV=/home/matthew/opencv/installation/openCV-master/lib/
 LIBDIR_BOOST=/usr/lib/
-LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem
+LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem stdc++
 
 LINKFLAGS = $(addprefix -l,$(LIBS))
 
@@ -35,4 +35,7 @@ clean:
 testing: $(OBJECTS)
 	$(CC) $^ $(CFLAGS) testing/testASCData.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testASCData.out
 
-.PHONY: clean testing
+testFDPM: $(OBJECTS)
+	$(CC) $^ $(CFLAGS) testing/testFDPM.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testFDPM.out
+
+.PHONY: clean testing testFDPM
