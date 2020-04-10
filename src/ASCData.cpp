@@ -7,6 +7,7 @@
 #include <cmath>
 #include <dirent.h>
 #include <sys/types.h>
+
 #define BOOST_FILESYSTEM_VERSION 3
 #define BOOST_FILESYSTEM_NO_DEPRECATED 
 #include <boost/filesystem.hpp>
@@ -84,9 +85,13 @@ ASCData getASCData(std::string fname)
       getline(f,line);
     }
  
-    //thisDat.phase = new float[thisDat.numFreqs*thisDat.nDiodes];
-    //thisDat.amp = new float[thisDat.numFreqs*thisDat.nDiodes];
+    thisDat.phase.reserve(thisDat.numFreqs*thisDat.nDiodes);
+    thisDat.amp.reserve(thisDat.numFreqs*thisDat.nDiodes);
+    thisDat.reim.reserve(thisDat.numFreqs*thisDat.nDiodes);
     int lineNum = 0;
+    float onePhase=0;
+    float oneAmp=0;
+    std::complex<float> oneReIm;
     while (true) {
       getline(f,line); //Get next data line
       if (f.eof()) { break;}
@@ -94,15 +99,20 @@ ASCData getASCData(std::string fname)
 	std::string token = line.substr(0, line.find('\t'));
 	if (i == 0) {
 	  //int v = atoi(token.c_str());
-	  thisDat.freqs.push_back(atoi(token.c_str()));
+	  thisDat.freqs.push_back(atof(token.c_str()));
 	  //std::cout << v << std::endl;
 	}
 	else if (i % 2 == 0) {
-	  thisDat.amp.push_back( atof(token.c_str()));
+	  oneAmp = atof(token.c_str());
+	  thisDat.amp.push_back( oneAmp);
 	  //std::cout << lineNum*nDiodes + (i/2) << std::endl;
+
+	  oneReIm = {oneAmp * cos(onePhase), oneAmp * sin(onePhase)}; 
+	  thisDat.reim.push_back(oneReIm);
 	}
 	else {
-	  thisDat.phase.push_back( atof(token.c_str())*M_PI/180.0);
+	  onePhase = atof(token.c_str())*M_PI/180;
+	  thisDat.phase.push_back( onePhase );
 	}
 	line.erase(0,line.find('\t')+1);
       }
@@ -141,6 +151,7 @@ ASCData stripNaNFreqs(ASCData dat) {
   for (size_t i = 0; i<nanRows.size(); i++) {
     dat.amp.erase(dat.amp.begin()+((nanRows[i]-numGone)*dat.nDiodes), dat.amp.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
     dat.phase.erase(dat.phase.begin()+((nanRows[i]-numGone)*dat.nDiodes), dat.phase.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
+    dat.reim.erase(dat.reim.begin() + ((nanRows[i]-numGone)*dat.nDiodes), dat.reim.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
     dat.freqs.erase(dat.freqs.begin()+nanRows[i]-numGone);
     numGone++;
   }
@@ -167,22 +178,91 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   ret = stripNaNFreqs(ret);
   std::vector<float> runSumAmp(ret.amp.size(), 0.0);
   std::vector<float> runSumPhase(ret.phase.size(), 0.0);
+  std::vector<std::complex<float>> runSumReim(ret.reim.size());
   //  std::cout << runSumAmp.size() << std::endl;
   for (size_t i = 0; i< fList.size(); i++) {
     fullFile = dName / fList[i];
     ASCData thisDat = getASCData(fullFile.native());
+    
     thisDat = stripNaNFreqs(thisDat);
-    runSumAmp=sumVecs(thisDat.amp, runSumAmp);
+    runSumAmp = sumVecs(thisDat.amp, runSumAmp);
     runSumPhase = sumVecs(thisDat.phase, runSumPhase);
+    runSumReim = sumVecs(thisDat.reim, runSumReim);
+    //std::cout << "First reim: " << runSumReim[0] << std::endl;
   }
   //ASCData a2 = getASCData(fList[0].native());
   //ASCData a3 = getASCData(fList[1].native());
-  ret.amp = divVecs(runSumAmp,(float)fList.size());
-  ret.phase = divVecs(runSumPhase,(float)fList.size());
+  ret.amp=   divVecs(runSumAmp,(float)fList.size());
+  ret.phase= divVecs(runSumPhase,(float)fList.size());
+  //ret.reim = runSumReim;//divVecs(runSumReim, 10.0);
   //std::vector<float> a4 = sumVecs(a2.amp,a3.amp);
+  ret.reim.clear();
+  //std::vector<std::complex<float>> result;
+  //std::complex<float> d((float)fList.size(),0);
+  for (size_t i = 0; i<ret.amp.size(); i++) {
+    ret.reim.push_back(runSumReim[i]/(float)fList.size());
+  }
+  //std::cout << runSumReim[0] << "/" << "30.0" << "=" << runSumReim[0]/(float)30.0 << std::endl;
+  
   delete[] a1;
   return ret;
 }
+
+std::vector<std::complex<float>> getOneWavelengthComplex(std::vector<std::complex<float>> dat, int lambdaIdx, int numDiodes, int numFreqs) {
+  std::vector<std::complex<float>> ret;
+  ret.reserve(numFreqs);
+  for (int i = 0; i<numFreqs; i++) {
+    ret.push_back(dat[i*numDiodes + lambdaIdx]);
+  }
+  return ret;
+}
+
+std::vector<std::complex<float>> getOneWavelengthComplex(ASCData dat, int lambdaIdx) {
+
+  std::vector<std::complex<float>> ret;
+  ret.reserve(dat.numFreqs);
+  for (int i = 0; i<dat.numFreqs; i++) {
+    ret.push_back(dat.reim[i*dat.nDiodes + lambdaIdx]);
+  }
+  return ret;
+}
+
+//Return the amplitude and phase for one wavelength
+void getOneWavelengthAmpPhase(ASCData dat,int lambdaIdx, std::vector<float>* amp, std::vector<float>* phase) {
+
+  amp->reserve(dat.numFreqs);
+  phase->reserve(dat.numFreqs);
+  for (size_t i = 0; i<dat.freqs.size(); i++) {
+    amp->push_back(dat.amp[i*dat.nDiodes + lambdaIdx]);
+    phase->push_back(dat.phase[i*dat.nDiodes + lambdaIdx]);
+  }
+}
+
+
+//Return the amplitude and phase for one wavelength
+std::vector<float> getOneWavelengthAmp(ASCData dat,int lambdaIdx) {
+  std::vector<float> amp;
+  amp.reserve(dat.freqs.size());  
+  for (size_t i = 0; i<dat.freqs.size(); i++) {
+    std::cout << dat.amp.size() << std::endl;
+    std::cout << i*dat.nDiodes+lambdaIdx << std::endl;
+    amp.push_back(dat.amp[i*dat.nDiodes + lambdaIdx]);
+  }
+  return amp;
+}
+
+
+//Return the amplitude and phase for one wavelength
+std::vector<float> getOneWavelengthPhase(ASCData dat,int lambdaIdx) {
+  std::vector<float> phase;
+  phase.reserve(dat.freqs.size());  
+  for (size_t i = 0; i<dat.freqs.size(); i++) {
+    
+    phase.push_back(dat.amp[i*dat.nDiodes + lambdaIdx]);
+  }
+  return phase;
+}
+
 
 
 // return the filenames of all files that have the string fname

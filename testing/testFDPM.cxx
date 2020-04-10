@@ -1,5 +1,6 @@
 
 #include "FDPM.h"
+#include "ASCData.h"
 #include <iostream>
 #include "interpolation.h"
 #include "gnuplot_i.h"
@@ -95,17 +96,40 @@ int main(void) {
   sysResponseSweep(wavelength, sweepFreq, SDSep, ampVals, phaseVals, &sysRespAmp, &sysRespPhase);
 
   std::vector<std::complex<float>> x= sysResponseSweep(wavelength, sweepFreq, SDSep, sweepComplex);
-  //  for (size_t i =0; i<numFreqs; i++) {
-  //  std::cout << x[i] <<", (" << sysRespAmp[i] << ", " << sysRespPhase[i] << ")"  <<std::endl;
-  // }
 
-  
+  std::vector<float> calAmp;
+  std::vector<float> calPhase;
+
+  calibrate(ampVals,phaseVals,sysRespAmp,sysRespPhase, &calAmp, &calPhase);
+
+  //  for (size_t i =0; i<numFreqs; i++) {
+  //  std::cout << calAmp[i] <<", (" << ampVals[i] << ", " << calPhase[i] <<", " << phaseVals[i] << ")"  <<std::endl;
+  //}
+
+  std::vector<std::complex<float>> cal = calibrate(sweepComplex ,x);
+  for (size_t i =0; i<numFreqs; i++) {
+    std::cout << cal[i] << ", " << sweepComplex[i] << std::endl;
+  }
+  const alglib::real_1d_array ops2 = "[.015987,.7693874]";
+  float chiTest = chi(ops2, cal,SDSep,sweepFreq);
+  std::cout << chiTest << std::endl;
+
   //Plot the imaginary part
   // Gnuplot g1("lines");
   // //g1.set_style("points").plot_xy(sweepFreq,realVals);
   // g1.set_style("points").plot_xy(sweepFreq,imagVals);
   // g1.showonscreen();
   // wait_for_key();
+
+  ASCData expData = getASCData("exampleData/Acrin9-000.asc");
+  expData = stripNaNFreqs(expData);
+
+  std::vector<std::complex<float>> aDat = getOneWavelengthComplex(expData,1); 
+  std::vector<std::complex<float>> sResp = sysResponseSweep(690, expData.freqs,expData.SDSep, aDat);
+  std::vector<std::complex<float>> acal = calibrate(aDat,sResp);
+
+  std::vector<float> OPs = 
+  
   return 0;
 }
 

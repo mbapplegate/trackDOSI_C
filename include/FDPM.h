@@ -28,8 +28,9 @@ std::complex<float> p1SemiInf(float,float,float,float);
 /* std::complex<float> p1SemiInf(float*, float,float); */
 std::complex<float> p1SemiInf(const alglib::real_1d_array&, float, float);
 
-/* void getModelError(const alglib::real_1d_array&, alglib::real_1d_array&, void*); */
-/* float chi(const alglib::real_1d_array&, std::complex<float>*, int, float, float*); */
+void getModelError(const alglib::real_1d_array&, alglib::real_1d_array&, void*);
+
+float chi(const alglib::real_1d_array&, std::vector<std::complex<float>>, float, std::vector<float>);
 
 /* std::vector<float> runInverseModel(); */
 
@@ -47,6 +48,6 @@ void sysResponseSweep(int, std::vector<float>, float,std::vector<float>, std::ve
 
 std::vector<std::complex<float>> sysResponseSweep(int, std::vector<float>, float, std::vector<std::complex<float>>); 
 
-/* void calibrate(float*, float*, float*, float*, uint32_t, float*, float*); */
-/* void calibrate(std::complex<float>*, std::complex<float>*, uint32_t, std::complex<float>*); */
+void calibrate(std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
+std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>>, std::vector<std::complex<float>>);
 #endif

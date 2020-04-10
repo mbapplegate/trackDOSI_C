@@ -4,7 +4,9 @@
  *
  *Author: Matt Applegate
  *Date Created: 29 October 2019
- *Last Modified: 30 October 2019
+ *Last Modified: 10 April 2020
+ *
+ *Updated to use std::vector instead of arrays
  */
 
 #include <stdio.h>
@@ -13,6 +15,8 @@
 #include <complex>
 #include "FDPM.h"
 #include "interpolation.h"
+#include "utilities.h"
+#include "ASCData.h"
 
 //using namespace alglib;
 /*complex double
@@ -105,94 +109,97 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
 
 
 
-// /*void
-//  *getModelError
-//  *
-//  *PURPOSE: Calculates the difference between the measured and model data
-//  *
-//  */
-// void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr) {
-//   //fprintf(stderr,"%f, %f\n", op[0], op[1]);
-//   data passedDat = *(data *)(ptr); 
-//   std::complex<float> p1Res;
-//   for (uint32_t i =0; i< passedDat.numFreqs; i++) {
-//     p1Res = p1SemiInf(op,passedDat.freq[i], passedDat.SDSep);
-    
-//     fi[2*i] = p1Res.real() - passedDat.realPart[i];
-//     fi[2*i+1] = p1Res.imag() - passedDat.imPart[i];
-//   }
-//   //printf("%s %f %f\n",op.tostring(2).c_str(),p1Res.real(), p1Res.imag());
-// }
+/*void
+ *getModelError
+ *
+ *PURPOSE: Calculates the difference between the measured and model data
+ *
+ */
+void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr) {
+  //fprintf(stderr,"%f, %f\n", op[0], op[1]);
+  ASCData passedDat = *(ASCData *)(ptr); 
+  //std::complex<float> p1Res;
+  std::vector<std::complex<float>> p1Res = p1Sweep(op[0],op[1],passedDat.freqs, passedDat.SDSep);
+  float rePart;
+  float imPart;
+  for (int i =0; i< passedDat.numFreqs; i++) {
+    rePart = passedDat.amp[i] * cos(passedDat.phase[i]);
+    imPart = passedDat.amp[i] * sin(passedDat.phase[i]);
+    fi[2*i] = p1Res[i].real() - rePart;
+    fi[2*i+1] = p1Res[i].imag() - imPart;
+  }
+  //printf("%s %f %f\n",op.tostring(2).c_str(),p1Res.real(), p1Res.imag());
+}
 
 
-// /*double
-//  *chi
-//  *
-//  *PURPOSE: Calculates the cost function for the gradient descent algorithm
-//  *
-//  */
-// float chi(const alglib::real_1d_array &op, std::complex<float>* measuredDat, int numFreqs,float SDsep,float* f) {
-//   std::complex<float> *simDat = new std::complex<float>[numFreqs];
-//   p1Sweep(op[0],op[1],f,SDsep, numFreqs,simDat);
-//   float ss = 0;
-//   for (int i = 0; i<numFreqs; i++) {
-//     std::complex<float> x= simDat[i] - measuredDat[i];
-//     ss+= std::abs(x);
-//   }
-//   delete[] simDat;
-//   return ss/(numFreqs-2);
-// }
+/*double
+ *chi
+ *
+ *PURPOSE: Calculates the cost function for the gradient descent algorithm
+ *
+ */
+float chi(const alglib::real_1d_array &op, std::vector<std::complex<float>> measuredDat,float SDsep, std::vector<float> f) {
+  //std::complex<float> *simDat = new std::complex<float>[numFreqs];
+  std::vector<std::complex<float>> simDat = p1Sweep(op[0],op[1],f,SDsep);
+  float ss = 0;
+  for (size_t i = 0; i<f.size(); i++) {
+    std::complex<float> x= simDat[i] - measuredDat[i];
+    ss+= std::abs(x);
+  }
+  //delete[] simDat;
+  return ss/(f.size()-2);
+}
 
-// std::vector<float> runInverseModel(){
-//   data d;
-//   const int numStarts = 2;
-//   float chis[numStarts];
-//   //real_1d_array x;
-//   alglib::real_1d_array q0;
-//   alglib::real_1d_array q1;
-//   float muaGuess[numStarts] = { 0.005, .001 };// {.005, .001, .01, .05, .005};
-//   float musGuess[numStarts] = { .8,1.3 };// {.8, 1.3, 1.0, 1.0, .6};
-//   float muaRec[numStarts];
-//   float musRec[numStarts];
-//   //printf("True values: [%f,%f]\n",randMua,randMus);
-//   for (int q= 0; q<numStarts; q++) {
+std::vector<float> runInverseModel(ASCData d){
+  
+  const int numStarts = 2;
+  float chis[numStarts];
+  //real_1d_array x;
+  alglib::real_1d_array q0;
+  alglib::real_1d_array q1;
+  float muaGuess[numStarts] = { 0.005, .001 };// {.005, .001, .01, .05, .005};
+  float musGuess[numStarts] = { .8,1.3 };// {.8, 1.3, 1.0, 1.0, .6};
+  float muaRec[numStarts];
+  float musRec[numStarts];
+  //printf("True values: [%f,%f]\n",randMua,randMus);
+  for (int q= 0; q<numStarts; q++) {
      
-//     //char buf[20];
-//     //sprintf(buf,"[%.4f,%.4f]",muaGuess[q],musGuess[q]);
-
-//     //alglib::real_1d_array x=buf;
-//     //fprintf(stderr,"q=%d\n",q); 
-//     alglib::minlmstate state;
-//     alglib::minlmreport rep;
-//     double epsx = 1e-12;
-//     alglib::ae_int_t maxits = 0;
-//     alglib::real_1d_array bndl = "[.00001, .001]";
-//     alglib::real_1d_array bndu = "[.5, 5]";
-//     alglib::real_1d_array s = "[.01,1]";
-//     //fprintf(stderr,"%f\n",x[0]);
-//     alglib::minlmcreatev(2,2*d.numFreqs,x,0.0001,state);
-//     alglib::minlmsetbc(state,bndl,bndu);
-//     alglib::minlmsetcond(state,epsx,maxits);
-//     alglib::minlmsetscale(state,s);
+    char buf[20];
+    sprintf(buf,"[%.4f,%.4f]",muaGuess[q],musGuess[q]);
+    alglib::real_1d_array x=buf;
+    //alglib::real_1d_array x=buf;
+    //fprintf(stderr,"q=%d\n",q); 
+    alglib::minlmstate state;
+    alglib::minlmreport rep;
+    double epsx = 1e-12;
+    alglib::ae_int_t maxits = 0;
+    alglib::real_1d_array bndl = "[.00001, .001]";
+    alglib::real_1d_array bndu = "[.5, 5]";
+    alglib::real_1d_array s = "[.01,1]";
+    //fprintf(stderr,"%f\n",x[0]);
+    alglib::minlmcreatev(2,2*d.numFreqs,x,0.0001,state);
+    alglib::minlmsetbc(state,bndl,bndu);
+    alglib::minlmsetcond(state,epsx,maxits);
+    alglib::minlmsetscale(state,s);
     
-//     alglib::minlmoptimize(state,getModelError,NULL,&d);
-//     alglib::minlmresults(state,x,rep);
-//     chis[q] = chi(x,noisySimDat,d.numFreqs,d.SDSep,f);
-//     muaRec[q] = x[0];
-//     musRec[q] = x[1];
-//   }
-//   int bestIdx = 0;
-//   float bestCHI=10000;
-//   for (uint32_t i = 0; i< numStarts; i++) {
-//     if (chis[i] < bestCHI) {
-//       bestIdx = i;
-//       bestCHI = chis[i];
-//     }
-//   }
+    alglib::minlmoptimize(state,getModelError,NULL,&d);
+    alglib::minlmresults(state,x,rep);
+    chis[q] = chi(x,d.reim,d.SDSep,d.freqs);
+    muaRec[q] = x[0];
+    musRec[q] = x[1];
+  }
+  int bestIdx = 0;
+  float bestCHI=10000;
+  for (uint32_t i = 0; i< numStarts; i++) {
+    if (chis[i] < bestCHI) {
+      bestIdx = i;
+      bestCHI = chis[i];
+    }
+  }
 
-//   std::vector<float> OP{muaRec[bestIdx],musRec[bestIdx]};
-//   return OP;
-// }
+  std::vector<float> OP{muaRec[bestIdx],musRec[bestIdx]};
+  return OP;
+}
 
 /*void
  *p1Sweep
@@ -382,18 +389,19 @@ std::vector<std::complex<float>> sysResponseSweep(int wavelength, std::vector<fl
 }
 
 
-// void calibrate(float* Amp, float* Phase, float* sysRespAmp, float*sysRespPhase, uint32_t numVals, float* calAmp, float* calPhase){
-//   for (uint32_t i = 0; i<numVals; i++) {
-//     calAmp[i] = Amp[i]/sysRespAmp[i];
-//     calPhase[i] = Phase[i] - sysRespPhase[i];
-//   }
-// }
+void calibrate(std::vector<float> Amp, std::vector<float> Phase, std::vector<float> sysRespAmp, std::vector<float> sysRespPhase, std::vector<float>* calAmp, std::vector<float>* calPhase){
 
-// void calibrate(std::complex<float>* expResult, std::complex<float>* sysResponse, uint32_t numVals, std::complex<float>* calResult) {
-//   for (uint32_t i=0; i<numVals; i++) {
-//     calResult[i] = expResult[i]/sysResponse[i];
-//   }
-// }
+  *calAmp = divVecs(Amp,sysRespAmp);
+  *calPhase = diffVecs(Phase,sysRespPhase);
+
+}
+
+std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>> expResult, std::vector<std::complex<float>> sysResponse) {
+
+  std::vector<std::complex<float>> calResp = divVecs(expResult,sysResponse);
+  return calResp;
+  
+}
 
 // //void p1SemiInfLM(const real_1d_array &c constant_real_1d_array &x,double &func, void *ptr) {
 
