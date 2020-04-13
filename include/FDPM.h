@@ -15,6 +15,7 @@
 #include<stdint.h>
 #include<vector>
 #include "interpolation.h"
+#include "ASCData.h"
 
 //struct data {
 //  float SDSep;
@@ -46,7 +47,7 @@ std::complex<float> calcReImSystemResponse(int, float, float, std::complex<float
 
 void sysResponseSweep(int, std::vector<float>, float,std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
 
-std::vector<std::complex<float>> sysResponseSweep(int, std::vector<float>, float, std::vector<std::complex<float>>); 
+std::vector<std::complex<float>> sysResponseSweep(ASCData);
 
 void calibrate(std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
 std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>>, std::vector<std::complex<float>>);

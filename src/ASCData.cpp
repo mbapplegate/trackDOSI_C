@@ -192,6 +192,8 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   }
   //ASCData a2 = getASCData(fList[0].native());
   //ASCData a3 = getASCData(fList[1].native());
+  //ret.amp.clear();
+  //ret.phase.clear();
   ret.amp=   divVecs(runSumAmp,(float)fList.size());
   ret.phase= divVecs(runSumPhase,(float)fList.size());
   //ret.reim = runSumReim;//divVecs(runSumReim, 10.0);

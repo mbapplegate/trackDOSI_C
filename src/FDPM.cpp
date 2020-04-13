@@ -115,9 +115,10 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
  *PURPOSE: Calculates the difference between the measured and model data
  *
  */
-void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr) {
+void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr, void *datptr) {
   //fprintf(stderr,"%f, %f\n", op[0], op[1]);
   ASCData passedDat = *(ASCData *)(ptr); 
+  std::vector<std::complex<float>> calDat = *(std::vector<std::complex<float>>*)(datptr);
   //std::complex<float> p1Res;
   std::vector<std::complex<float>> p1Res = p1Sweep(op[0],op[1],passedDat.freqs, passedDat.SDSep);
   float rePart;
@@ -150,7 +151,7 @@ float chi(const alglib::real_1d_array &op, std::vector<std::complex<float>> meas
   return ss/(f.size()-2);
 }
 
-std::vector<float> runInverseModel(ASCData d){
+std::vector<float> runInverseModel(ASCData d, std::vector<std::complex<float>> calDat){
   
   const int numStarts = 2;
   float chis[numStarts];
@@ -167,7 +168,7 @@ std::vector<float> runInverseModel(ASCData d){
     char buf[20];
     sprintf(buf,"[%.4f,%.4f]",muaGuess[q],musGuess[q]);
     alglib::real_1d_array x=buf;
-    //alglib::real_1d_array x=buf;
+    
     //fprintf(stderr,"q=%d\n",q); 
     alglib::minlmstate state;
     alglib::minlmreport rep;
@@ -177,7 +178,7 @@ std::vector<float> runInverseModel(ASCData d){
     alglib::real_1d_array bndu = "[.5, 5]";
     alglib::real_1d_array s = "[.01,1]";
     //fprintf(stderr,"%f\n",x[0]);
-    alglib::minlmcreatev(2,2*d.numFreqs,x,0.0001,state);
+    alglib::minlmcreatev(2,d.numFreqs,x,0.0001,state);
     alglib::minlmsetbc(state,bndl,bndu);
     alglib::minlmsetcond(state,epsx,maxits);
     alglib::minlmsetscale(state,s);
@@ -360,7 +361,7 @@ std::complex<float> calcReImSystemResponse(int wavelength, float f, float SDSep,
   float phantomMus;
   getACRINops(wavelength, &phantomMua, &phantomMus);
   std::complex<float> phantomResult = p1SemiInf(phantomMua, phantomMus, f, SDSep);
-  //  std::cout << "phantomResult: " << phantomResult << std::endl
+  //std::cout << "phantomResult: " << wavelength << std::endl;
   //	    <<"expResult: " << expResult << std::endl;
   return expResult/phantomResult;
 }
@@ -378,15 +379,23 @@ void sysResponseSweep(int wavelength, std::vector<float> f, float SDSep, std::ve
   }
 }
 
-std::vector<std::complex<float>> sysResponseSweep(int wavelength, std::vector<float> f, float SDSep, std::vector<std::complex<float>> expResult) {
+std::vector<std::complex<float>> sysResponseSweep(ASCData expResult) {
+  int numWavelengths = (int)expResult.wavelengths.size();
+  int numFreqs = (int)expResult.freqs.size();
   std::vector<std::complex<float>> sysResponse;
-  sysResponse.reserve(f.size());
-  for (size_t i = 0; i< f.size(); i++) {
-    std::complex<float> thisResp = calcReImSystemResponse(wavelength, f[i], SDSep, expResult[i]);
-    sysResponse.push_back(thisResp);
-   }
+  sysResponse.reserve(numFreqs*numWavelengths);
+
+  
+  for (int i = 0; i< numFreqs; i++) {
+    for (int j = 0; j<numWavelengths; j++) {      
+      std::complex<float> thisResp = calcReImSystemResponse(expResult.wavelengths[j], expResult.freqs[i], expResult.SDSep, expResult.reim[i*numWavelengths+j]);
+      sysResponse.push_back(thisResp);
+    }
+  }
   return sysResponse;
 }
+
+
 
 
 void calibrate(std::vector<float> Amp, std::vector<float> Phase, std::vector<float> sysRespAmp, std::vector<float> sysRespPhase, std::vector<float>* calAmp, std::vector<float>* calPhase){
