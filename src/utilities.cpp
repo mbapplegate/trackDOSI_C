@@ -17,6 +17,26 @@ std::vector<float> sumVecs(const std::vector<float>& a, const std::vector<float>
   return result;
 }
 
+std::vector<float> sqrtVecs(const std::vector<float>&a) {
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  for (size_t i = 0; i<a.size(); i++ ){
+    result.push_back(std::sqrt(a[i]));
+  }
+
+  return result;
+}
+
+std::vector<float> squareVecs(const std::vector<float>&a) {
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  std::transform(a.begin(), a.end(), a.begin(), std::back_inserter(result),std::multiplies<float>());
+
+  return result;
+}
+
 //Elementwise summation of complex vector
 std::vector<std::complex<float>> sumVecs(const std::vector<std::complex<float>>& a, const std::vector<std::complex<float>>& b) {
   assert(a.size() == b.size());

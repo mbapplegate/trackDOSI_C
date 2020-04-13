@@ -125,6 +125,7 @@ int main(void) {
  
   boost::filesystem::path dStr = "exampleData";
   std::string fname = "Acrin9";
+
   ASCData avg = averageASCData(dStr,fname);
   std::cout << "average data len: " << avg.reim.size() << std::endl;
   
@@ -132,7 +133,11 @@ int main(void) {
   expData = stripNaNFreqs(expData);
   std::cout << "single data len: " << expData.reim.size() << ", num freqs: " << expData.freqs.size() << std::endl;
 
-  
+  for (int i = 0; i<avg.damp.size(); i++) {
+    
+    if (i % 4 == 0) {std::cout << std::endl;}
+    std::cout << avg.damp[i] << ", ";
+  }
   // //  std::vector<std::complex<float>> aDat = getOneWavelengthComplex(expData,1); 
   std::vector<std::complex<float>> sResp = sysResponseSweep(avg);
   std::vector<std::complex<float>> acal= calibrate(expData.reim,sResp);

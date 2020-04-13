@@ -419,6 +419,11 @@ std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>> expR
   
 }
 
+//std::vector<float> dfdp(std::vector<float> freqs, std::vector<float> theoAmp, float mua, float mus, float prec, float n, float SDSep) {
+//  int m = 2*freqs.size();
+//  int n = 2;
+
+
 // //void p1SemiInfLM(const real_1d_array &c constant_real_1d_array &x,double &func, void *ptr) {
 
 // //  float SDsep = 10;
