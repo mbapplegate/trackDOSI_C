@@ -88,6 +88,7 @@ ASCData getASCData(std::string fname)
     thisDat.phase.reserve(thisDat.numFreqs*thisDat.nDiodes);
     thisDat.amp.reserve(thisDat.numFreqs*thisDat.nDiodes);
     thisDat.reim.reserve(thisDat.numFreqs*thisDat.nDiodes);
+    //thisDat.calReim.reserve(thisDat.numFreqs*thisDat.nDiodes);
     int lineNum = 0;
     float onePhase=0;
     float oneAmp=0;

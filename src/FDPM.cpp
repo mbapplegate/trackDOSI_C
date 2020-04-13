@@ -115,19 +115,21 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
  *PURPOSE: Calculates the difference between the measured and model data
  *
  */
-void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr, void *datptr) {
+void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, void *ptr) {
   //fprintf(stderr,"%f, %f\n", op[0], op[1]);
-  ASCData passedDat = *(ASCData *)(ptr); 
-  std::vector<std::complex<float>> calDat = *(std::vector<std::complex<float>>*)(datptr);
+  inverseData passedDat = *(inverseData *)(ptr); 
+  
   //std::complex<float> p1Res;
   std::vector<std::complex<float>> p1Res = p1Sweep(op[0],op[1],passedDat.freqs, passedDat.SDSep);
-  float rePart;
-  float imPart;
-  for (int i =0; i< passedDat.numFreqs; i++) {
-    rePart = passedDat.amp[i] * cos(passedDat.phase[i]);
-    imPart = passedDat.amp[i] * sin(passedDat.phase[i]);
-    fi[2*i] = p1Res[i].real() - rePart;
-    fi[2*i+1] = p1Res[i].imag() - imPart;
+  //float rePart;
+  //float imPart;
+  for (size_t i =0; i< passedDat.freqs.size(); i++) {
+    //rePart = passedDat.calReim[i] * cos(passedDat.phase[i]);
+    //imPart = passedDat.amp[i] * sin(passedDat.phase[i]);
+    fi[2*i] = p1Res[i].real() - passedDat.calDat[i].real();
+    fi[2*i+1] = p1Res[i].imag() - passedDat.calDat[i].imag();
+    //std::complex<float> d = p1Res[i]-passedDat.calReim[i];
+    //fi[i] = std::abs(d);
   }
   //printf("%s %f %f\n",op.tostring(2).c_str(),p1Res.real(), p1Res.imag());
 }
@@ -151,8 +153,13 @@ float chi(const alglib::real_1d_array &op, std::vector<std::complex<float>> meas
   return ss/(f.size()-2);
 }
 
-std::vector<float> runInverseModel(ASCData d, std::vector<std::complex<float>> calDat){
-  
+std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat){
+
+  inverseData d;
+  d.SDSep = SDSep;
+  d.freqs = freqs;
+  d.calDat = dat;
+  int numFreqs = (int)freqs.size();
   const int numStarts = 2;
   float chis[numStarts];
   //real_1d_array x;
@@ -178,14 +185,14 @@ std::vector<float> runInverseModel(ASCData d, std::vector<std::complex<float>> c
     alglib::real_1d_array bndu = "[.5, 5]";
     alglib::real_1d_array s = "[.01,1]";
     //fprintf(stderr,"%f\n",x[0]);
-    alglib::minlmcreatev(2,d.numFreqs,x,0.0001,state);
+    alglib::minlmcreatev(2,2*numFreqs,x,0.0001,state);
     alglib::minlmsetbc(state,bndl,bndu);
     alglib::minlmsetcond(state,epsx,maxits);
     alglib::minlmsetscale(state,s);
     
     alglib::minlmoptimize(state,getModelError,NULL,&d);
     alglib::minlmresults(state,x,rep);
-    chis[q] = chi(x,d.reim,d.SDSep,d.freqs);
+    chis[q] = chi(x,dat,d.SDSep,d.freqs);
     muaRec[q] = x[0];
     musRec[q] = x[1];
   }

@@ -17,13 +17,12 @@
 #include "interpolation.h"
 #include "ASCData.h"
 
-//struct data {
-//  float SDSep;
-//  std::vector<float> freq;
-//  int numFreqs;
-//  std::vector<float> realPart;
-//  std::vector<float> imPart;
-//};
+struct inverseData {
+  float SDSep;
+  std::vector<float> freqs;
+  std::vector<std::complex<float>> calDat;
+  //  std::vector<float> imPart;
+};
 
 std::complex<float> p1SemiInf(float,float,float,float);
 /* std::complex<float> p1SemiInf(float*, float,float); */
@@ -33,7 +32,7 @@ void getModelError(const alglib::real_1d_array&, alglib::real_1d_array&, void*);
 
 float chi(const alglib::real_1d_array&, std::vector<std::complex<float>>, float, std::vector<float>);
 
-/* std::vector<float> runInverseModel(); */
+std::vector<float> runInverseModel(float,std::vector<float>, std::vector<std::complex<float>>);
 
 std::vector<std::complex<float>> p1Sweep(float, float,std::vector<float>, float);
 

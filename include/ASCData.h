@@ -14,6 +14,7 @@ struct ASCData {
   std::vector<float> phase;
   std::vector<float> amp;
   std::vector<std::complex<float>> reim;
+  //  std::vector<std::complex<float>> calReim;
   std::vector<int> wavelengths;
   std::string patientID;
   int nDiodes;

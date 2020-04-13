@@ -135,14 +135,19 @@ int main(void) {
   
   // //  std::vector<std::complex<float>> aDat = getOneWavelengthComplex(expData,1); 
   std::vector<std::complex<float>> sResp = sysResponseSweep(avg);
-  std::vector<std::complex<float>> acal = calibrate(expData.reim,sResp);
+  std::vector<std::complex<float>> acal= calibrate(expData.reim,sResp);
   std::vector<std::complex<float>> trivialCal = calibrate(avg.reim,sResp);
-  // //std::vector<float> OPs =
+
+  
+
+  //expData.calReim=acal  // //std::vector<float> OPs =
   std::vector<float> reAvg, imAvg, reOne, imOne,reCal,imCal,reResp,imResp;
   std::vector<std::complex<float>> oneLamAvg= getOneWavelengthComplex(avg,3);
   std::vector<std::complex<float>> oneLamExp =getOneWavelengthComplex(expData,3);
-  std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(acal,3,4,244);
+  std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(trivialCal,3,4,244);
   std::vector<std::complex<float>> oneLamResp=getOneWavelengthComplex(sResp,3,4,244);
+  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal);
+  std::cout << "mua: " << recOP[0] << ", mus: " << recOP[1] << std::endl;
   for (int q = 0; q<avg.freqs.size(); q++) {
     reAvg.push_back(oneLamAvg[q].real());
     imAvg.push_back(oneLamAvg[q].imag());
