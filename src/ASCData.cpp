@@ -199,7 +199,8 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   std::vector<float> runSumPhase2(ret.phase.size(), 0.0);
   std::vector<float> diffVecAmp(ret.amp.size(), 0.0);
   std::vector<float> diffVecPhase(ret.phase.size(), 0.0);
-  
+  //  ret.damp.clear();
+  //ret.dphase.clear();
   for (size_t i = 0; i<fList.size(); i++) {
     ASCData thisDat = getASCData(fullFile.native());
     thisDat = stripNaNFreqs(thisDat);
@@ -211,9 +212,9 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
     runSumPhase2 = sumVecs(diffVecPhase,runSumPhase2);
 
   }
-
-  std::vector<float> stdAmp = divVecs(runSumAmp2,(fList.size()-1));
-  std::vector<float> stdPhase = divVecs(runSumPhase2, (fList.size()-1));
+  //  std::cout << "run Sum Amp 0: " << runSumAmp2[0] <<std::endl;
+  std::vector<float> stdAmp = divVecs(runSumAmp2,(float)fList.size()-1);
+  std::vector<float> stdPhase = divVecs(runSumPhase2, (float)fList.size()-1);
 
   ret.damp = sqrtVecs(stdAmp);
   ret.dphase = sqrtVecs(stdPhase);

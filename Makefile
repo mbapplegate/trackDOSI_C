@@ -38,4 +38,7 @@ testing: $(OBJECTS)
 testFDPM: $(OBJECTS)
 	$(CC) $^ $(CFLAGS) testing/testFDPM.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testFDPM.out
 
+testopencv: $(OBJECTS)
+	$(CC) $^ $(CFLAGS) testing/testOpenCV.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testOpenCV.out
+
 .PHONY: clean testing testFDPM
