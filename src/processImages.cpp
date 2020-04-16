@@ -99,6 +99,16 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
   redIm.setTo(cv::Scalar(0,0,255));
   
   while (quitFlag) {
+    blueLower = cv::Mat::zeros(blueLower.size(), blueLower.type());
+    redUpper = cv::Mat::zeros(redUpper.size(), redUpper.type());
+    //maskUpper = cv::Mat::zeros(maskUpper.size(), maskUpper.type());
+    //maskLower = cv::Mat::zeros(maskLower.size(), maskLower.type());
+    outIm = cv::Mat::zeros(outIm.size(), outIm.type());
+    //upperMask = cv::Mat::zeros(upperMask.size(), upperMask.type());
+    //lowerMask = cv::Mat::zeros(lowerMask.size(), lowerMask.type());
+    //maskBoth = cv::Mat::zeros(maskBoth.size(), maskBoth.type());
+    imMask = cv::Mat::zeros(imMask.size(), imMask.type());
+    
     ret.HSVTop[0] =hue_low_top;
     ret.HSVTop[1]=sat_low_top;
     ret.HSVTop[2]=val_low_top;
@@ -116,6 +126,7 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
 
     if (exposure != lastExposure) {
       cap.set(cv::CAP_PROP_EXPOSURE, exposure);
+      std::cout << "Exposure set to: " << exposure <<std::endl;
     }
 
     lastExposure = exposure;
@@ -125,8 +136,8 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
     //Set HSV image
     cv::cvtColor(image,hsv,cv::COLOR_BGR2HSV);
     //Define Lower and upper masks
-    cv::inRange(hsv,ret.HSVTop[0], ret.HSVTop[3],maskUpper);
-    cv::inRange(hsv,ret.HSVBottom[0], ret.HSVBottom[3], maskLower);
+    cv::inRange(hsv,cv::Scalar(ret.HSVTop[0],ret.HSVTop[1],ret.HSVTop[2]), cv::Scalar(ret.HSVTop[3],ret.HSVTop[4],ret.HSVTop[5]),maskUpper);
+    cv::inRange(hsv,cv::Scalar(ret.HSVBottom[0],ret.HSVBottom[1],ret.HSVBottom[2]), cv::Scalar(ret.HSVBottom[3],ret.HSVBottom[4],ret.HSVBottom[5]), maskLower);
     //Combine both masks and invert
     cv::bitwise_or(maskLower, maskUpper, maskBoth);
     cv::bitwise_not(maskBoth,maskBoth);
@@ -149,7 +160,7 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
     cv::add(imMask, redUpper, lowerMask);
     cv::add(upperMask,lowerMask,outIm);
 
-    cv::imshow("tracked", maskUpper);
+    cv::imshow("tracked", outIm);
     cv::imshow("controlTop", pHolder);
     cv::imshow("controlBottom", pHolder);
     int key = cv::waitKey(1);
@@ -161,6 +172,38 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
   cv::destroyAllWindows();
   return ret;
 }
+
+int largestContourIdx(std::vector<std::vector<cv::Point>> contours) {
+  int largest_contour_index = -1;
+  float largest_area = 0;
+  for (size_t i = 0; i<contours.size(); i++) {
+    float a = cv::contourArea(contours[i], false);
+    if (a > largest_area) {
+      largest_area = a;
+      largest_contour_index = i;
+    }
+  }
+  return largest_contour_index;
+}
+float getPxPerCm(cv::Mat maskLower) {
+  std::vector<cv::Vec4i> hierarchy;
+  std::vector<std::vector<cv::Point>> contours;
+  cv::findContours(maskLower.clone(), contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+  int largeIdx = largestContourIdx(contours);
+  cv::Point2f ctr;
+  float rad;
+  cv::minEnclosingCircle((cv::Mat)contours[largeIdx], ctr, rad);
+
+  float pxPerCm = rad/(2*SPHERE_RAD_CM);
+  return pxPerCm;
+
+}
+
+void getTissueLoc(float *ctrLower, float probeHtPx, float theta, float phi, float* tissueLoc) {
+  tissueLoc[0] = ctrLower[0] - probeHtPx*sin(phi)*cos(theta);
+  tissueLoc[1] = ctrLower[1] - probeHtPx*sin(phi)*sin(theta);
+}
+  
 
 void nothing(int a, void* b){
   return;

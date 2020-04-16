@@ -24,4 +24,8 @@ cv::VideoCapture initCamera(int);
 
 imageInfo calibrateIm(cv::VideoCapture, int);
 void nothing(int,void*);
+int largestContourIdx(std::vector<std::vector<cv::Point>>);
+float getPxPerCm(cv::Mat);
+void getTissueLoc(float*, float, float, float, float*);
+
 #endif
