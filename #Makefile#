@@ -3,7 +3,7 @@ IOPENCVDIR=/home/matthew/opencv/installation/openCV-master/include/opencv4/
 IBOOSTDIR=/usr/include/boost/
 LIBDIR_OCV=/home/matthew/opencv/installation/openCV-master/lib/
 LIBDIR_BOOST=/usr/lib/
-LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem stdc++ opencv_imgcodecs
+LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem stdc++ opencv_imgcodecsd
 
 LINKFLAGS = $(addprefix -l,$(LIBS))
 

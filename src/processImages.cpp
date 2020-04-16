@@ -3,6 +3,7 @@
 #include "processImages.h"
 #include <iostream>
 
+
 cv::VideoCapture initCamera(int device) {
 
   int apiID = cv::CAP_ANY;
@@ -149,7 +150,14 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
 
     
     if (breastFlag) {
-      std::cout << "Not implemented yet" << std::endl;
+      cv::Mat grayIm = cv::Mat::zeros(image.size(),CV_8U);
+      cv::Mat edgeIm = cv::Mat::zeros(image.size(),CV_8U);
+      cv::Mat colorEdge = cv::Mat::zeros(image.size(),image.type());
+      cv::cvtColor(image, grayIm, cv::COLOR_BGR2GRAY);
+      cv::Canny(grayIm, edgeIm, cannyLow, cannyHigh);
+      cv::cvtColor(edgeIm,colorEdge,cv::COLOR_GRAY2BGR);
+      cv::bitwise_and(colorEdge, image, imMask,maskBoth);
+      
     }
     else {
       //Set the masked image
@@ -203,7 +211,22 @@ void getTissueLoc(float *ctrLower, float probeHtPx, float theta, float phi, floa
   tissueLoc[0] = ctrLower[0] - probeHtPx*sin(phi)*cos(theta);
   tissueLoc[1] = ctrLower[1] - probeHtPx*sin(phi)*sin(theta);
 }
-  
+
+void savePic(cv::VideoCapture cap, boost::filesystem::path datDir, std::string sampName, int breastFlag, int* canVals) {
+    cv::Mat image = cv::Mat::zeros(cv::Size(IMWIDTH,IMHEIGHT),CV_8UC3);
+    boost::filesystem::path fullFile = datDir / (sampName + "_img.png");
+    cap.read(image);
+    if (breastFlag == 1) {
+      cv::Mat greyIm = cv::Mat::zeros(image.size(), CV_8U);
+      cv::Mat edgeIm = cv::Mat::zeros(image.size(), CV_8U);
+      cv::cvtColor(image,greyIm,cv::COLOR_BGR2GRAY);
+      cv::Canny(greyIm, edgeIm, canVals[0], canVals[1]);
+      cv::imwrite(fullFile.string(),edgeIm);
+    }
+    else {
+      cv::imwrite(fullFile.string(), image);
+    }
+}
 
 void nothing(int a, void* b){
   return;

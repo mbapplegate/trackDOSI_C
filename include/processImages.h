@@ -3,6 +3,7 @@
 #define PROCESSIMAGES_H
 #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
+#include <boost/filesystem.hpp>
 
 static const int IMWIDTH=640;
 static const int IMHEIGHT=480;
@@ -27,5 +28,5 @@ void nothing(int,void*);
 int largestContourIdx(std::vector<std::vector<cv::Point>>);
 float getPxPerCm(cv::Mat);
 void getTissueLoc(float*, float, float, float, float*);
-
+void savePic(cv::VideoCapture, boost::filesystem::path, std::string, int, int*);
 #endif
