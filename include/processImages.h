@@ -29,4 +29,5 @@ int largestContourIdx(std::vector<std::vector<cv::Point>>);
 float getPxPerCm(cv::Mat);
 void getTissueLoc(float*, float, float, float, float*);
 void savePic(cv::VideoCapture, boost::filesystem::path, std::string, int, int*);
+int getAngle(cv::Mat, cv::Mat, float, float, double*, double*,double*, double*);void getTissueLoc(double*,float,float,float,double*); 
 #endif

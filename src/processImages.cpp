@@ -2,7 +2,7 @@
 #include "opencv2/imgproc.hpp"
 #include "processImages.h"
 #include <iostream>
-
+#include <cmath>
 
 cv::VideoCapture initCamera(int device) {
 
@@ -98,7 +98,12 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
   cv::Mat pHolder = cv::Mat::zeros(cv::Size(640,5), CV_8U);
   blueIm.setTo(cv::Scalar(255,0,0));
   redIm.setTo(cv::Scalar(0,0,255));
-  
+
+  double ctrUpper[2] = {0,0};
+  double ctrLower[2] = {0,0};
+  double tissueLoc[2] = {0,0};
+  double phi = 0;
+  double theta = 0;
   while (quitFlag) {
     blueLower = cv::Mat::zeros(blueLower.size(), blueLower.type());
     redUpper = cv::Mat::zeros(redUpper.size(), redUpper.type());
@@ -131,7 +136,7 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
     }
 
     lastExposure = exposure;
-    float sphereRadiusPx = SPHERE_RAD_CM * pxPerCm;
+    //float sphereRadiusPx = SPHERE_RAD_CM * pxPerCm;
 
     cap.read(image);
     //Set HSV image
@@ -148,6 +153,7 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
     cv::bitwise_and(blueIm, blueIm, blueLower,maskLower);
     cv::bitwise_and(redIm,redIm, redUpper, maskUpper);
 
+    int angleFound = getAngle(maskUpper, maskLower,pxPerCm,0.0,&theta,&phi,&ctrLower[0],&ctrUpper[0]);
     
     if (breastFlag) {
       cv::Mat grayIm = cv::Mat::zeros(image.size(),CV_8U);
@@ -168,13 +174,26 @@ imageInfo calibrateIm(cv::VideoCapture cap, int breastFlag) {
     cv::add(imMask, redUpper, lowerMask);
     cv::add(upperMask,lowerMask,outIm);
 
+    if (angleFound >= 0) {
+      cv::circle(outIm, cv::Point(ctrUpper[0],ctrUpper[1]), 5, cv::Scalar(255,0,0),-1);
+      cv::circle(outIm, cv::Point(ctrLower[0], ctrLower[1]), 5, cv::Scalar(0,0,255), -1);
+      getTissueLoc(&ctrLower[0], pxPerCm, theta, phi,&tissueLoc[0]);
+    }
     cv::imshow("tracked", outIm);
     cv::imshow("controlTop", pHolder);
     cv::imshow("controlBottom", pHolder);
     int key = cv::waitKey(1);
-
+    //std::cout << "Top Center: " << ctrUpper[0] << ", " << ctrUpper[1] << std::endl;
     if (key == 'q') {
       quitFlag = 0;
+    }
+    else if (key == 's') {
+      pxPerCm = getPxPerCm(maskLower);
+      std::cout << "pxPerCm: " << pxPerCm << std::endl;
+    }
+    else if (key == 'p') {
+      std::cout << "X: " << tissueLoc[0] << ", Y: " << tissueLoc[1] <<
+	", Theta: " << theta << ", Phi: " << phi << std::endl;
     }
   }
   cv::destroyAllWindows();
@@ -226,6 +245,66 @@ void savePic(cv::VideoCapture cap, boost::filesystem::path datDir, std::string s
     else {
       cv::imwrite(fullFile.string(), image);
     }
+}
+
+int getAngle(cv::Mat maskUpper, cv::Mat maskLower, float pxPerCm, float phi0, double* theta, double* phi, double* ctrLower, double* ctrUpper){
+  std::vector<cv::Vec4i> hierarchy;
+  std::vector<std::vector<cv::Point>> contoursLower;
+  std::vector<std::vector<cv::Point>> contoursUpper;
+
+  double cXupper = 0;
+  double cYupper = 0;
+  double cXlower = 0;
+  double cYlower = 0;
+  cv::Moments Mlower, Mupper;
+  int largestIdxUpper = -1;
+  int largestIdxLower = -1;
+  cv::findContours(maskLower.clone(), contoursLower, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+  largestIdxLower = largestContourIdx(contoursLower);
+  
+  cv::findContours(maskUpper.clone(), contoursUpper, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+  largestIdxUpper = largestContourIdx(contoursUpper);
+
+  if (largestIdxLower >= 0) {
+    Mlower = cv::moments(contoursLower[largestIdxLower], false);
+  }
+  else {return -1;}
+  if (largestIdxUpper >= 0) {
+    Mupper = cv::moments(contoursUpper[largestIdxUpper], false);
+  }
+  else{return -1;}
+
+  if (Mlower.m00 != 0) {
+    cXlower = Mlower.m10/Mlower.m00;
+    cYlower = Mlower.m01/Mlower.m00;
+  }
+  else{return -1;}
+  if (Mupper.m00 != 0) {
+    cXupper = Mupper.m10/Mupper.m00;
+    cYupper = Mupper.m01/Mupper.m00;
+    
+  }
+  else{return -1;}
+  double th = atan2(cYupper - cYlower, cXupper-cXlower);
+  double d = sqrt(pow((cXupper - cXlower),2) + pow((cYupper - cYlower),2));
+
+  double L1 = (SPHERE_RAD_CM * pxPerCm) - (TOP_RAD_CM * pxPerCm);
+  //double L2 = 2*SPHERE_RAD_CM * pxPerCm;
+
+  double Beta = acos(d/L1);
+  double p = M_PI/2 - Beta - phi0;
+  *phi = p;
+  *theta = th;
+  *ctrLower = cXlower;
+  *(ctrLower+1) = cYlower;
+  *ctrUpper = cXupper;
+  *(ctrUpper+1) = cYupper;
+  return 0;
+}
+
+void getTissueLoc(double* ctrLower, float pxPerCm, float theta, float phi, double* tissueLoc) {
+  *tissueLoc = ctrLower[0] - PROBE_HT_CM*pxPerCm*sin(phi)*cos(theta);
+  *(tissueLoc+1) = ctrLower[1] - PROBE_HT_CM*pxPerCm*sin(phi)*cos(theta);
 }
 
 void nothing(int a, void* b){
