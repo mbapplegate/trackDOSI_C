@@ -193,7 +193,7 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
     runSumReim = sumVecs(thisDat.reim, runSumReim);
     //std::cout << "First reim: " << runSumReim[0] << std::endl;
   }
-  ret.amp=   divVecs(runSumAmp,(float)fList.size());
+  ret.amp=divVecs(runSumAmp,(float)fList.size());
   ret.phase= divVecs(runSumPhase,(float)fList.size());
   std::vector<float> runSumAmp2(ret.amp.size(), 0.0);
   std::vector<float> runSumPhase2(ret.phase.size(), 0.0);
@@ -202,9 +202,12 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   //  ret.damp.clear();
   //ret.dphase.clear();
   for (size_t i = 0; i<fList.size(); i++) {
+    //r (size_t i =0; i<1           ; i++){
+    fullFile = dName/fList[i];
     ASCData thisDat = getASCData(fullFile.native());
     thisDat = stripNaNFreqs(thisDat);
     diffVecAmp = diffVecs(thisDat.amp,ret.amp);
+    //std::cout << diffVecAmp[0] << std::endl;
     diffVecPhase = diffVecs(thisDat.phase,ret.phase);
     diffVecAmp = squareVecs(diffVecAmp);
     diffVecPhase = squareVecs(diffVecPhase);
@@ -213,8 +216,8 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
 
   }
   //  std::cout << "run Sum Amp 0: " << runSumAmp2[0] <<std::endl;
-  std::vector<float> stdAmp = divVecs(runSumAmp2,(float)fList.size()-1);
-  std::vector<float> stdPhase = divVecs(runSumPhase2, (float)fList.size()-1);
+  std::vector<float> stdAmp = divVecs(runSumAmp2,(float)fList.size());
+  std::vector<float> stdPhase = divVecs(runSumPhase2, (float)fList.size());
 
   ret.damp = sqrtVecs(stdAmp);
   ret.dphase = sqrtVecs(stdPhase);

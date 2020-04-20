@@ -137,13 +137,16 @@ int main(void) {
     
     if (i % 4 == 0) {std::cout << std::endl;}
     std::cout << avg.damp[i] << ", ";
-  }
+   }
+    //for (int i = 0; i<avg.damp.size(); i++) {
+    
+    // if (i % 4 == 0) {std::cout << std::endl;}
+    // std::cout << avg.damp[i] << ", ";
+    // }
   // //  std::vector<std::complex<float>> aDat = getOneWavelengthComplex(expData,1); 
   std::vector<std::complex<float>> sResp = sysResponseSweep(avg);
   std::vector<std::complex<float>> acal= calibrate(expData.reim,sResp);
   std::vector<std::complex<float>> trivialCal = calibrate(avg.reim,sResp);
-
-  
 
   //expData.calReim=acal  // //std::vector<float> OPs =
   std::vector<float> reAvg, imAvg, reOne, imOne,reCal,imCal,reResp,imResp;
