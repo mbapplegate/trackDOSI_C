@@ -13,8 +13,8 @@ struct ASCData {
   int numFreqs;
   std::vector<float> phase;
   std::vector<float> amp;
-  std::vector<float> damp;
-  std::vector<float> dphase;
+  std::vector<float> stdAmp;
+  std::vector<float> stdPhase;
   std::vector<std::complex<float>> reim;
   //std::vector<std::complex<float>> calReim;
   std::vector<int> wavelengths;

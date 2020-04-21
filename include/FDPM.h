@@ -21,6 +21,9 @@ struct inverseData {
   float SDSep;
   std::vector<float> freqs;
   std::vector<std::complex<float>> calDat;
+  std::vector<float> wts;
+  //std::vector<float> damp;
+  // std::vector<float> dphase;
   //  std::vector<float> imPart;
 };
 
@@ -32,9 +35,10 @@ void getModelError(const alglib::real_1d_array&, alglib::real_1d_array&, void*);
 
 float chi(const alglib::real_1d_array&, std::vector<std::complex<float>>, float, std::vector<float>);
 
-std::vector<float> runInverseModel(float,std::vector<float>, std::vector<std::complex<float>>);
+std::vector<float> runInverseModel(float,std::vector<float>, std::vector<std::complex<float>>,std::vector<float>);
 
 std::vector<std::complex<float>> p1Sweep(float, float,std::vector<float>, float);
+//std::vector<std::complex<float>> p1Sweep(float, float,std::vector<float>, float);
 
 void ReIm2AmpPhase(std::complex<float>, float*, float*); 
 std::complex<float> AmpPhase2ReIm(float, float);
@@ -46,8 +50,10 @@ std::complex<float> calcReImSystemResponse(int, float, float, std::complex<float
 
 void sysResponseSweep(int, std::vector<float>, float,std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
 
-std::vector<std::complex<float>> sysResponseSweep(ASCData);
+std::vector<std::complex<float>> sysResponseSweep(ASCData, std::vector<float>*, std::vector<float>*);
 
 void calibrate(std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
-std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>>, std::vector<std::complex<float>>);
+std::vector<std::complex<float>> calibrate(const std::vector<std::complex<float>>*, const std::vector<std::complex<float>>*);
+
+void dfdp_p1seminf(float, float, float,float,float,float*);
 #endif

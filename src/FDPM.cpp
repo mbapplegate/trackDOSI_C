@@ -61,11 +61,11 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
   //fprintf(stderr, "R01=%f, RB1= %f\n",r01,rb1);
   std::complex<float> k((mua-fbc*alpha)/D,-(fbc+mua*alpha)/D);
   k = sqrt(k);
-  double kr = std::abs(k.real());
-  double ki = std::abs(k.imag());
+  float kr = std::abs(k.real());
+  float ki = std::abs(k.imag());
   //fprintf(stderr, "kr=%f, ki=%f\n",kr,ki);
-  double er01 = exp(-kr*r01);
-  double erb1 = exp(-kr*rb1);
+  float er01 = exp(-kr*r01);
+  float erb1 = exp(-kr*rb1);
   //fprintf(stderr, "er01=%f, erb1=%f\n",er01,erb1);
   std::complex<float> val(((er01/r01) * cos(ki*r01) - (erb1/rb1)*cos(ki*rb1))/D,
 			   ((er01/r01) * sin(ki*r01) - (erb1/rb1)*sin(ki*rb1))/D);
@@ -74,7 +74,7 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
 }
 
 
- std::complex<float> p1SemiInf(const alglib::real_1d_array &op, float f, float SDSep) {
+std::complex<float> p1SemiInf(const alglib::real_1d_array &op, float f, float SDSep) {
   float ior = 1.4; //Index of refraction, fixed for now
   float c = 2.99792457e11/ior; //Speed of light in mm/s
   float mutr = op[0]+op[1]; //mu transport in 1/mm
@@ -103,7 +103,9 @@ std::complex<float> p1SemiInf(float mua, float mus, float f, float SDSep) {
   //fprintf(stderr, "er01=%f, erb1=%f\n",er01,erb1);
   std::complex<float> val(((er01/r01) * cos(ki*r01) - (erb1/rb1)*cos(ki*rb1))/D,
 			   ((er01/r01) * sin(ki*r01) - (erb1/rb1)*sin(ki*rb1))/D);
+
   return val;
+ 
  
 }
 
@@ -126,8 +128,8 @@ void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, v
   for (size_t i =0; i< passedDat.freqs.size(); i++) {
     //rePart = passedDat.calReim[i] * cos(passedDat.phase[i]);
     //imPart = passedDat.amp[i] * sin(passedDat.phase[i]);
-    fi[2*i] = p1Res[i].real() - passedDat.calDat[i].real();
-    fi[2*i+1] = p1Res[i].imag() - passedDat.calDat[i].imag();
+    fi[2*i] = (p1Res[i].real() - passedDat.calDat[i].real())*passedDat.wts[2*i];
+    fi[2*i+1] = (p1Res[i].imag() - passedDat.calDat[i].imag())*passedDat.wts[2*i+1];
     //std::complex<float> d = p1Res[i]-passedDat.calReim[i];
     //fi[i] = std::abs(d);
   }
@@ -135,7 +137,7 @@ void getModelError(const alglib::real_1d_array &op, alglib::real_1d_array &fi, v
 }
 
 
-/*double
+/*float
  *chi
  *
  *PURPOSE: Calculates the cost function for the gradient descent algorithm
@@ -146,19 +148,20 @@ float chi(const alglib::real_1d_array &op, std::vector<std::complex<float>> meas
   std::vector<std::complex<float>> simDat = p1Sweep(op[0],op[1],f,SDsep);
   float ss = 0;
   for (size_t i = 0; i<f.size(); i++) {
-    std::complex<float> x= simDat[i] - measuredDat[i];
+    std::complex<float> x= simDat[i] - (std::complex<float>)measuredDat[i];
     ss+= std::abs(x);
   }
   //delete[] simDat;
   return ss/(f.size()-2);
 }
 
-std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat){
+std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat, std::vector<float> wts){
 
   inverseData d;
   d.SDSep = SDSep;
   d.freqs = freqs;
   d.calDat = dat;
+  d.wts = wts;
   int numFreqs = (int)freqs.size();
   const int numStarts = 2;
   float chis[numStarts];
@@ -179,7 +182,7 @@ std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::v
     //fprintf(stderr,"q=%d\n",q); 
     alglib::minlmstate state;
     alglib::minlmreport rep;
-    double epsx = 1e-12;
+    float epsx = 1e-12;
     alglib::ae_int_t maxits = 0;
     alglib::real_1d_array bndl = "[.00001, .001]";
     alglib::real_1d_array bndu = "[.5, 5]";
@@ -224,6 +227,15 @@ std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::v
  * result    //COMPLEX vector of p1 diffusion approximation
  *
  */
+//std::vector<std::complex<float>> p1Sweep(float mua, float mus, std::vector<float> f, float SDsep){
+//  std::vector<std::complex<float>> result;
+// result.reserve(f.size());
+// for (size_t i = 0; i<f.size(); i++){
+//   result.push_back( (std::complex<float>)p1SemiInf(mua,mus,f[i],SDsep));
+// }
+// return result;
+//}
+
 std::vector<std::complex<float>> p1Sweep(float mua, float mus, std::vector<float> f, float SDsep){
   std::vector<std::complex<float>> result;
   result.reserve(f.size());
@@ -247,6 +259,11 @@ std::vector<std::complex<float>> p1Sweep(float mua, float mus, std::vector<float
  *
  */
 void ReIm2AmpPhase(std::complex<float> z, float* amp, float* phase) {
+  *amp = std::abs(z);
+  *phase = std::arg(z);
+}
+
+void ReIm2AmpPhase(std::complex<double> z, double* amp, double* phase) {
   *amp = std::abs(z);
   *phase = std::arg(z);
 }
@@ -370,7 +387,7 @@ std::complex<float> calcReImSystemResponse(int wavelength, float f, float SDSep,
   std::complex<float> phantomResult = p1SemiInf(phantomMua, phantomMus, f, SDSep);
   //std::cout << "phantomResult: " << wavelength << std::endl;
   //	    <<"expResult: " << expResult << std::endl;
-  return expResult/phantomResult;
+  return (std::complex<float>)expResult/phantomResult;
 }
 
 
@@ -386,7 +403,10 @@ void sysResponseSweep(int wavelength, std::vector<float> f, float SDSep, std::ve
   }
 }
 
-std::vector<std::complex<float>> sysResponseSweep(ASCData expResult) {
+std::vector<std::complex<float>> sysResponseSweep(ASCData expResult,std::vector<float>* ACsdsqd, std::vector<float>* Phisdsqd) {
+  float pdmua = 0.05;
+  float pdmus = 0.05;
+  
   int numWavelengths = (int)expResult.wavelengths.size();
   int numFreqs = (int)expResult.freqs.size();
   std::vector<std::complex<float>> sysResponse;
@@ -403,7 +423,81 @@ std::vector<std::complex<float>> sysResponseSweep(ASCData expResult) {
 }
 
 
+void dfdp_p1seminf(float mua, float mus, float freq, float sep,float dp, float* dfdp) {
+  //int m = 2;
+  //int n = 2;
+  float mua_start = mua;
+  float mus_start = mus;
+  std::complex<float> f = p1SemiInf(mua,mus,freq,sep);
+  float fAmp;
+  float fPhase;
+  ReIm2AmpPhase(f,&fAmp,&fPhase);
+  float nabMua = mua * dp;
+  if ( mua == 0) {
+    nabMua = dp;
+  }
+  mua = mua_start + nabMua;
+  if (nabMua != 0) {
+    std::complex<float> f1 = p1SemiInf(mua,mus,freq,sep);
+    float f1Amp;
+    float f1Phase;
+    ReIm2AmpPhase(f1, &f1Amp,&f1Phase);
+        if (dp < 0) {
+      dfdp[0] = (f1Amp - fAmp)/nabMua;
+      dfdp[1] = (f1Phase - fPhase)/nabMua;
+    }
+    else {
+      mua = mua_start - nabMua;
+      std::cout << "nabla mua: " << nabMua << std::endl;
+      std::complex<float> f2 = p1SemiInf(mua,mus,freq,sep);
+      float f2Amp;
+      float f2Phase;
+      ReIm2AmpPhase(f2,&f2Amp,&f2Phase);
+      dfdp[0] = (f1Amp-f2Amp)/(2*nabMua);
+      dfdp[1] = (f1Phase-f2Phase)/(2*nabMua);
+      
+      std::cout << "F1 Amp: " << f1Amp << std::endl <<
+      "F1 Phase: " << f1Phase << std::endl;
+      std::cout << "F2 Amp: " << f2Amp << std::endl <<
+      "F2 Phase: " << f2Phase << std::endl;
 
+    }
+  }
+  else {
+    dfdp[0] = 0;
+    dfdp[1] = 0;
+  }
+  
+  mua = mua_start;
+
+  float nabMus = dp * mus;
+  if(mus == 0) {
+    nabMus = dp;
+  }
+  mus = mus_start + nabMus;
+  if (nabMus != 0) {
+    std::complex<float> f1 = p1SemiInf(mua,mus,freq,sep);
+    float f1Amp, f1Phase;
+    ReIm2AmpPhase(f1,&f1Amp, &f1Phase);
+    if (dp < 0) {
+      dfdp[2] = (f1Amp - fAmp)/nabMus;
+      dfdp[3] = (f1Phase - fPhase)/nabMus;
+    }
+    else {
+      mus = mus_start - nabMus;
+      std::complex<float> f2 = p1SemiInf(mua,mus,freq,sep);
+      float f2Amp, f2Phase;
+      ReIm2AmpPhase(f2,&f2Amp,&f2Phase);
+      dfdp[2] = (f1Amp - f2Amp)/(2*nabMus);
+      dfdp[3] = (f1Phase - f2Phase)/ (2*nabMus);
+    }
+    
+  }
+  else{
+    dfdp[2] = 0;
+    dfdp[3] = 0;
+  }
+}
 
 void calibrate(std::vector<float> Amp, std::vector<float> Phase, std::vector<float> sysRespAmp, std::vector<float> sysRespPhase, std::vector<float>* calAmp, std::vector<float>* calPhase){
 
@@ -412,9 +506,9 @@ void calibrate(std::vector<float> Amp, std::vector<float> Phase, std::vector<flo
 
 }
 
-std::vector<std::complex<float>> calibrate(std::vector<std::complex<float>> expResult, std::vector<std::complex<float>> sysResponse) {
+std::vector<std::complex<float>> calibrate(const std::vector<std::complex<float>>* expResult, const std::vector<std::complex<float>>* sysResponse) {
 
-  std::vector<std::complex<float>> calResp = divVecs(expResult,sysResponse);
+  std::vector<std::complex<float>> calResp = divVecs(*expResult,*sysResponse);
   return calResp;
   
 }

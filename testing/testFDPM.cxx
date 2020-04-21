@@ -133,10 +133,10 @@ int main(void) {
   expData = stripNaNFreqs(expData);
   std::cout << "single data len: " << expData.reim.size() << ", num freqs: " << expData.freqs.size() << std::endl;
 
-  for (int i = 0; i<avg.damp.size(); i++) {
+  for (int i = 0; i<avg.stdAmp.size(); i++) {
     
     if (i % 4 == 0) {std::cout << std::endl;}
-    std::cout << avg.damp[i] << ", ";
+    std::cout << avg.stdAmp[i] << ", ";
    }
     //for (int i = 0; i<avg.damp.size(); i++) {
     
@@ -144,9 +144,30 @@ int main(void) {
     // std::cout << avg.damp[i] << ", ";
     // }
   // //  std::vector<std::complex<float>> aDat = getOneWavelengthComplex(expData,1); 
-  std::vector<std::complex<float>> sResp = sysResponseSweep(avg);
-  std::vector<std::complex<float>> acal= calibrate(expData.reim,sResp);
-  std::vector<std::complex<float>> trivialCal = calibrate(avg.reim,sResp);
+
+  //TESTING PARTIAL DERVIATIVES/////////////////////
+  std::cout << "Testing Partial Derivatives" << std::endl;
+  float muadp = 0.018416369;
+  float musdp = 0.803474193;
+  float freq = 50;
+  float sep = 10;
+  float dfdp[4];
+  float dp = 0.0001;
+
+  dfdp_p1seminf(muadp,musdp,freq,sep, dp, &dfdp[0]);
+
+  std::cout << "dAmp/dMua: " << dfdp[0] << std::endl;
+  std::cout << "dPhase/dMua: " << dfdp[1] << std::endl;
+  std::cout << "dAmp/dMus: " << dfdp[2] << std::endl;
+  std::cout << "dPhase/dMus: " << dfdp[3] << std::endl;
+  ////////////////////////////////////////////////
+  std::vector<float> acsdsqd;
+  std::vector<float> phisdsqd;
+  acsdsqd.reserve(avg.freqs.size());
+  phisdsqd.reserve(avg.freqs.size());
+  std::vector<std::complex<float>> sResp = sysResponseSweep(avg,&acsdsqd,&phisdsqd);
+  std::vector<std::complex<float>> acal= calibrate(&expData.reim,&sResp);
+  std::vector<std::complex<float>> trivialCal = calibrate(&avg.reim,&sResp);
 
   //expData.calReim=acal  // //std::vector<float> OPs =
   std::vector<float> reAvg, imAvg, reOne, imOne,reCal,imCal,reResp,imResp;
@@ -154,7 +175,8 @@ int main(void) {
   std::vector<std::complex<float>> oneLamExp =getOneWavelengthComplex(expData,3);
   std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(trivialCal,3,4,244);
   std::vector<std::complex<float>> oneLamResp=getOneWavelengthComplex(sResp,3,4,244);
-  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal);
+
+  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal,acsdsqd);
   std::cout << "mua: " << recOP[0] << ", mus: " << recOP[1] << std::endl;
   for (int q = 0; q<avg.freqs.size(); q++) {
     reAvg.push_back(oneLamAvg[q].real());
