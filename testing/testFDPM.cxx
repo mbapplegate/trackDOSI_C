@@ -129,8 +129,8 @@ int main(void) {
   ASCData avg = averageASCData(dStr,fname);
   std::cout << "average data len: " << avg.reim.size() << std::endl;
   
-  ASCData expData = getASCData("exampleData/Acrin9-000.asc");
-  expData = stripNaNFreqs(expData);
+  ASCData expData = averageASCData(dStr,"Acrin9-000.asc");
+  //expData = stripNaNFreqs(expData);
   std::cout << "single data len: " << expData.reim.size() << ", num freqs: " << expData.freqs.size() << std::endl;
 
   for (int i = 0; i<avg.stdAmp.size(); i++) {
@@ -171,17 +171,28 @@ int main(void) {
       std::cout<<phisdsqd[i*4+j];
     }
   }
+  //expData = stripNanFreqs(expData);
   std::vector<std::complex<float>> acal= calibrate(&expData.reim,&sResp);
+  std::vector<float> wts = wtsAmpPhase2ReIm(acsdsqd,phisdsqd, &expData, acal);
+  std::cout << std::endl << "WTS" << std::endl;
+  for (int i = 0; i<10; i++ ) {
+    std::cout << std::endl;
+    for (int j = 0; j<4; j++) {
+      std::cout << wts[2*(i*4+j)];
+    }
+  }
   std::vector<std::complex<float>> trivialCal = calibrate(&avg.reim,&sResp);
 
   //expData.calReim=acal  // //std::vector<float> OPs =
   std::vector<float> reAvg, imAvg, reOne, imOne,reCal,imCal,reResp,imResp;
   std::vector<std::complex<float>> oneLamAvg= getOneWavelengthComplex(avg,3);
   std::vector<std::complex<float>> oneLamExp =getOneWavelengthComplex(expData,3);
-  std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(trivialCal,3,4,244);
+  std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(acal,3,4,244);
   std::vector<std::complex<float>> oneLamResp=getOneWavelengthComplex(sResp,3,4,244);
+  std::vector<float> oneLamWts = getOneWavelengthWts(wts, 3, 4, 244);
 
-  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal,acsdsqd);
+  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal,oneLamWts);
+  std::cout << std::endl;
   std::cout << "mua: " << recOP[0] << ", mus: " << recOP[1] << std::endl;
   for (int q = 0; q<avg.freqs.size(); q++) {
     reAvg.push_back(oneLamAvg[q].real());

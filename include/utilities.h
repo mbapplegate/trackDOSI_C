@@ -15,4 +15,6 @@ std::vector<float> divVecs(const std::vector<float>&, float);
 std::vector<std::complex<float>> divVecs(const std::vector<std::complex<float>>&, float);
 std::vector<float> multVecs(const std::vector<float>&, const std::vector<float>&);
 std::vector<float> multVecs(const std::vector<float>&, float);
+std::vector<float> sinVecs(const std::vector<float>&);
+std::vector<float> cosVecs(const std::vector<float>&);
 #endif

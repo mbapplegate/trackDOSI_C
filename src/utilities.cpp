@@ -145,3 +145,26 @@ std::vector<float> multVecs(const std::vector<float>& a, float b) {
 
   return result;
 }
+
+std::vector<float> sinVecs(const std::vector<float>&a) {
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  for (size_t i = 0; i<a.size(); i++) {
+    result.push_back(sin(a[i]));
+  }
+
+  return result;
+}
+
+
+std::vector<float> cosVecs(const std::vector<float>&a) {
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  for (size_t i = 0; i<a.size(); i++) {
+    result.push_back(cos(a[i]));
+  }
+
+  return result;
+}

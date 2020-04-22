@@ -180,7 +180,10 @@ ASCData stripNaNFreqs(ASCData dat) {
     dat.amp.erase(dat.amp.begin()+((nanRows[i]-numGone)*dat.nDiodes), dat.amp.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
     dat.phase.erase(dat.phase.begin()+((nanRows[i]-numGone)*dat.nDiodes), dat.phase.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
     dat.reim.erase(dat.reim.begin() + ((nanRows[i]-numGone)*dat.nDiodes), dat.reim.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
+    dat.stdAmp.erase(dat.stdAmp.begin() + ((nanRows[i]-numGone)*dat.nDiodes), dat.stdAmp.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
+    dat.stdPhase.erase(dat.stdPhase.begin() + ((nanRows[i]-numGone)*dat.nDiodes), dat.stdPhase.begin()+(nanRows[i]+1-numGone)*dat.nDiodes);
     dat.freqs.erase(dat.freqs.begin()+nanRows[i]-numGone);
+    
     numGone++;
   }
   dat.numFreqs = dat.freqs.size();
@@ -212,6 +215,8 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   //Get the absolute path of the first file
   boost::filesystem::path fullFile;
   fullFile = dName / fList[0];
+  std::cout << "Filepath0: " << fullFile << std::endl;
+  std::cout << "FList size: " << fList.size() << std::endl;
   //  std::cout << fullFile.native() << std::endl;
   //Set up Array of ASCData structures
   ASCData *a1 = new ASCData[fList.size()];
@@ -261,6 +266,7 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
       
     }
     //  std::cout << "run Sum Amp 0: " << runSumAmp2[0] <<std::endl;
+    
     std::vector<float> stdAmp = divVecs(runSumAmp2,(float)fList.size());
     std::vector<float> stdPhase = divVecs(runSumPhase2, (float)fList.size());
 
@@ -269,8 +275,9 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   }
   //If there's only one file set the standard deviation to a constant value
   else {
-    ret.stdAmp = std::vector<float>(ret.amp.size(), 0.03);
+    ret.stdAmp = multVecs(ret.amp,std::vector<float>(ret.amp.size(), 0.03));
     ret.stdPhase = std::vector<float>(ret.amp.size(), 0.3);
+    std::cout << "Only one file. STDPHASE: " << ret.stdPhase[0] << std::endl;
   }
   //ASCData a2 = getASCData(fList[0].native());
   //ASCData a3 = getASCData(fList[1].native());
@@ -315,6 +322,16 @@ std::vector<std::complex<float>> getOneWavelengthComplex(std::vector<std::comple
   return ret;
 }
 
+std::vector<float> getOneWavelengthWts(std::vector<float> wts, int lambdaIdx, int numDiodes, int numFreqs) {
+  int lambdaLen = numDiodes*numFreqs*2;
+  std::vector<float> oneLamWts;
+  oneLamWts.reserve(lambdaLen);
+  for (int i = 0; i<wts.size()/2; i++) {
+    oneLamWts.push_back(wts[i*numDiodes*2 + lambdaIdx]);
+    oneLamWts.push_back(wts[i*numDiodes*2 + lambdaIdx+1]);
+  }
+  return oneLamWts;
+}
 //Same as above but takes in an ASCData struct
 std::vector<std::complex<float>> getOneWavelengthComplex(ASCData dat, int lambdaIdx) {
 

@@ -36,8 +36,9 @@ ASCData averageASCData(boost::filesystem::path,std::string);
 std::vector<float> getOneWavelengthAmp(ASCData, int);
 std::vector<float> getOneWavelengthPhase(ASCData, int);
 void getOneWavelengthAmpPhase(ASCData, int,std::vector<float>*, std::vector<float>*);
-
+std::vector<float> getOneWavelengthWts(std::vector<float>, int, int, int);
 std::vector<std::complex<float>> getOneWavelengthComplex(std::vector<std::complex<float>>, int,int,int);
 
 std::vector<std::complex<float>> getOneWavelengthComplex(ASCData, int);
+
 #endif

@@ -155,6 +155,40 @@ float chi(const alglib::real_1d_array &op, std::vector<std::complex<float>> meas
   return ss/(f.size()-2);
 }
 
+std::vector<float> wtsAmpPhase2ReIm(std::vector<float> ACsd_sqd, std::vector<float> Phisd_sqd,const ASCData *rawDat, std::vector<std::complex<float>> calResp) {
+
+  std::vector<float> calAmp, calPhase;
+  calAmp.reserve(ACsd_sqd.size());
+  calPhase.reserve(ACsd_sqd.size());
+
+  for (size_t i = 0; i<ACsd_sqd.size(); i++) {
+    float tempAmp, tempPhase;
+    ReIm2AmpPhase(calResp[i], &tempAmp, &tempPhase);
+    calAmp.push_back(tempAmp);
+    calPhase.push_back(tempPhase);
+    //ReIm2AmpPhase(rawDat[i], &tempAmp2, &tempPhase2);
+  }
+
+  //std::cout << "size of stdAmp: " << rawDat->stdAmp.size() << std::endl;
+  std::vector<float> damp = multVecs(calAmp,sqrtVecs(sumVecs(squareVecs(divVecs(rawDat->stdAmp,rawDat->amp)),ACsd_sqd)));
+  std::vector<float> dphi = sqrtVecs(sumVecs(Phisd_sqd,squareVecs(rawDat->stdPhase)));
+  
+  std::vector<float> dReal_term1 = squareVecs(multVecs(damp,cosVecs(calPhase)));
+  std::vector<float> dReal_term2 = squareVecs(multVecs(dphi,multVecs(calAmp,sinVecs(calPhase))));
+  std::vector<float> dImag_term1 = squareVecs(multVecs(damp, sinVecs(calPhase)));
+  std::vector<float> dImag_term2 = squareVecs(multVecs(dphi,multVecs(calAmp,cosVecs(calPhase))));
+
+  std::vector<float> dReal = sqrtVecs(sumVecs(dReal_term1,dReal_term2));
+  std::vector<float> dImag = sqrtVecs(sumVecs(dImag_term1, dImag_term2));
+
+  std::vector<float> result;
+  result.reserve(2*ACsd_sqd.size());
+  for (size_t i = 0; i<ACsd_sqd.size(); i++) {
+    result.push_back(1/dReal[i]);
+    result.push_back(1/dImag[i]);
+  }
+  return result;
+}
 std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat, std::vector<float> wts){
 
   inverseData d;

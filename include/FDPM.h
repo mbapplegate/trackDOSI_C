@@ -56,4 +56,6 @@ void calibrate(std::vector<float>, std::vector<float>, std::vector<float>, std::
 std::vector<std::complex<float>> calibrate(const std::vector<std::complex<float>>*, const std::vector<std::complex<float>>*);
 
 void dfdp_p1seminf(float, float,float,float,float*);
+std::vector<float> wtsAmpPhase2ReIm(std::vector<float>, std::vector<float>, const ASCData*, std::vector<std::complex<float>>);
+
 #endif
