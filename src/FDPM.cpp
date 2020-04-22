@@ -380,13 +380,14 @@ void calcAmpPhaseSystemResponse(int wavelength, float f, float SDSep,float expAm
  *
  */
 
-std::complex<float> calcReImSystemResponse(int wavelength, float f, float SDSep, std::complex<float> expResult) {
+std::complex<float> calcReImSystemResponse(int wavelength, float f, float SDSep, std::complex<float> expResult, std::complex<float>* theory) {
   float phantomMua;
   float phantomMus;
   getACRINops(wavelength, &phantomMua, &phantomMus);
   std::complex<float> phantomResult = p1SemiInf(phantomMua, phantomMus, f, SDSep);
   //std::cout << "phantomResult: " << wavelength << std::endl;
   //	    <<"expResult: " << expResult << std::endl;
+  *theory = phantomResult;
   return (std::complex<float>)expResult/phantomResult;
 }
 
@@ -404,30 +405,81 @@ void sysResponseSweep(int wavelength, std::vector<float> f, float SDSep, std::ve
 }
 
 std::vector<std::complex<float>> sysResponseSweep(ASCData expResult,std::vector<float>* ACsdsqd, std::vector<float>* Phisdsqd) {
-  float pdmua = 0.05;
-  float pdmus = 0.05;
+  //float pdmua = 0.05;
+  //float pdmus = 0.05;
   
   int numWavelengths = (int)expResult.wavelengths.size();
   int numFreqs = (int)expResult.freqs.size();
   std::vector<std::complex<float>> sysResponse;
-  sysResponse.reserve(numFreqs*numWavelengths);
+  std::vector<float> dAmpdMua;
+  std::vector<float> dPhasedMua;
+  std::vector<float> dAmpdMus;
+  std::vector<float> dPhasedMus;
+  std::vector<float> theoryAmp;
+  std::vector<float> theoryPhase;
+  std::vector<float> pdmua;
+  std::vector<float> pdmus;
 
+  dAmpdMua.reserve(numFreqs*numWavelengths);
+  dAmpdMus.reserve(numFreqs*numWavelengths);
+  dPhasedMua.reserve(numFreqs*numWavelengths);
+  dPhasedMus.reserve(numFreqs*numWavelengths);
+  sysResponse.reserve(numFreqs*numWavelengths);
+  theoryAmp.reserve(numFreqs*numWavelengths);
+  theoryPhase.reserve(numFreqs*numWavelengths);
+  
+  float oneDFDP[4];
   
   for (int i = 0; i< numFreqs; i++) {
     for (int j = 0; j<numWavelengths; j++) {      
-      std::complex<float> thisResp = calcReImSystemResponse(expResult.wavelengths[j], expResult.freqs[i], expResult.SDSep, expResult.reim[i*numWavelengths+j]);
+      std::complex<float> theory;
+      std::complex<float> thisResp = calcReImSystemResponse(expResult.wavelengths[j], expResult.freqs[i], expResult.SDSep, expResult.reim[i*numWavelengths+j], &theory);
       sysResponse.push_back(thisResp);
+      dfdp_p1seminf(expResult.wavelengths[j],expResult.freqs[i],expResult.SDSep,0.0001,&oneDFDP[0]);
+      dAmpdMua.push_back(oneDFDP[0]);
+      dPhasedMua.push_back(oneDFDP[1]);
+      dAmpdMus.push_back(oneDFDP[2]);
+      dPhasedMus.push_back(oneDFDP[3]);
+
+      float thisAmp,thisPhase;
+      ReIm2AmpPhase(theory, &thisAmp, &thisPhase);
+      theoryAmp.push_back(thisAmp);
+      theoryPhase.push_back(thisPhase);
+
+      float thismua, thismus;
+      getACRINops(expResult.wavelengths[j],&thismua,&thismus);
+      pdmua.push_back(thismua * 0.05);
+      pdmus.push_back(thismus *0.05);
+      //std::cout << oneDFDP[0] << std::endl;
     }
   }
+
+  std::vector<float> acsdsqd_firstterm = squareVecs(divVecs(expResult.stdAmp,expResult.amp));
+  
+  std::vector<float> acsdsqd_secondterm =divVecs(sumVecs(squareVecs(multVecs(pdmua,dAmpdMua)),squareVecs(multVecs(pdmus,dAmpdMus))),squareVecs(theoryAmp));
+  //std::vector<float> acsdsqd_st = multVecs(pdmus,dAmpdMus);
+  std::vector<float> phisdsqd_firstterm = squareVecs(expResult.stdPhase);
+  std::vector<float> phisdsqd_secondterm = squareVecs(multVecs(dPhasedMua,pdmua));
+  //  std::vector<float> acsdsqd_thirdterm = squareVecs(divVecs(multVecs(dAmpdMus, pdmus),theoryAmp));
+  std::vector<float> phisdsqd_thirdterm = squareVecs(multVecs(dPhasedMus,pdmus));
+
+  *ACsdsqd = sumVecs(acsdsqd_firstterm,acsdsqd_secondterm);
+  //*Phisdsqd = sumVecs(phisdsqd_firstterm,phisdsqd_secondterm);
+  //*ACsdsqd = sumVecs(sumVecs(acsdsqd_firstterm,acsdsqd_secondterm),acsdsqd_thirdterm);
+  *Phisdsqd = sumVecs(sumVecs(phisdsqd_firstterm,phisdsqd_secondterm), phisdsqd_thirdterm);
   return sysResponse;
 }
 
 
-void dfdp_p1seminf(float mua, float mus, float freq, float sep,float dp, float* dfdp) {
+void dfdp_p1seminf(float wavelength, float freq, float sep,float dp, float* dfdp) {
   //int m = 2;
   //int n = 2;
-  float mua_start = mua;
-  float mus_start = mus;
+  
+  float mua_start;
+  float mus_start;
+  getACRINops(wavelength,&mua_start,&mus_start);
+  float mua = mua_start;
+  float mus = mus_start;
   std::complex<float> f = p1SemiInf(mua,mus,freq,sep);
   float fAmp;
   float fPhase;
@@ -448,7 +500,7 @@ void dfdp_p1seminf(float mua, float mus, float freq, float sep,float dp, float* 
     }
     else {
       mua = mua_start - nabMua;
-      std::cout << "nabla mua: " << nabMua << std::endl;
+      //std::cout << "nabla mua: " << nabMua << std::endl;
       std::complex<float> f2 = p1SemiInf(mua,mus,freq,sep);
       float f2Amp;
       float f2Phase;
@@ -456,10 +508,10 @@ void dfdp_p1seminf(float mua, float mus, float freq, float sep,float dp, float* 
       dfdp[0] = (f1Amp-f2Amp)/(2*nabMua);
       dfdp[1] = (f1Phase-f2Phase)/(2*nabMua);
       
-      std::cout << "F1 Amp: " << f1Amp << std::endl <<
-      "F1 Phase: " << f1Phase << std::endl;
-      std::cout << "F2 Amp: " << f2Amp << std::endl <<
-      "F2 Phase: " << f2Phase << std::endl;
+      //std::cout << "F1 Amp: " << f1Amp << std::endl <<
+      //"F1 Phase: " << f1Phase << std::endl;
+      //std::cout << "F2 Amp: " << f2Amp << std::endl <<
+      //"F2 Phase: " << f2Phase << std::endl;
 
     }
   }

@@ -1,11 +1,13 @@
 IDIR=include
 IOPENCVDIR=/home/matthew/opencv/installation/openCV-master/include/opencv4/
 IBOOSTDIR=/usr/include/boost/
-IQTDIR = /usr/include/x86_64-linux-gnu/qt5/
+#IQTDIR = /usr/include/x86_64-linux-gnu/qt5/
 LIBDIR_OCV=/home/matthew/opencv/installation/openCV-master/lib/
-LIBDIR_QT=/usr/lib/x86_64-linux-gnu/
+#LIBDIR_QT=/usr/lib/x86_64-linux-gnu/
 LIBDIR_BOOST=/usr/lib/
-LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem stdc++ opencv_imgcodecs Qt5Gui Qt5Core GL pthread Qt5Widgets
+LIBS=opencv_core opencv_highgui opencv_imgproc opencv_videoio boost_system boost_filesystem stdc++ opencv_imgcodecs
+
+#Qt5Gui Qt5Core GL pthread Qt5Widgets
 
 
 LINKFLAGS = $(addprefix -l,$(LIBS))
@@ -20,8 +22,10 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -std=c++11 -fPIC
 
-INC := -I$(IDIR) -I$(IOPENCVDIR) -I$(IBOOSTDIR) -I$(IQTDIR)
-LIB := -L$(LIBDIR_OCV) -L$(LIBDIR_BOOST) -L$(LIBDIR_QT)
+INC := -I$(IDIR) -I$(IOPENCVDIR) -I$(IBOOSTDIR)
+#-I$(IQTDIR)
+LIB := -L$(LIBDIR_OCV) -L$(LIBDIR_BOOST)
+# -L$(LIBDIR_QT)
 
 $(TARGET) : $(OBJECTS)
 	@echo " Linking. . ."

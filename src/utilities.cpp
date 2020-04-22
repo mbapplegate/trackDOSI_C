@@ -113,3 +113,35 @@ std::vector<std::complex<float>> divVecs(const std::vector<std::complex<float>>&
 
   return result;
 }
+
+
+//Divide vector by scalar (probably not efficient)
+std::vector<float> multVecs(const std::vector<float>& a, const std::vector<float>& b) {
+  assert(a.size() == b.size());
+  
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  // for (size_t i = 0; i<a.size(); i++) {
+  //  result.push_back( a[i]/b);
+  // }
+  std::transform(a.begin(), a.end(), b.begin(), std::back_inserter(result),std::multiplies<float>());
+
+  return result;
+}
+
+std::vector<float> multVecs(const std::vector<float>& a, float b) {
+
+  
+  std::vector<float> result;
+  result.reserve(a.size());
+
+  // for (size_t i = 0; i<a.size(); i++) {
+  //  result.push_back( a[i]/b);
+  // }
+  for (size_t i = 0; i<a.size(); i++) {
+    result.push_back(a[i] *b);
+  }
+
+  return result;
+}

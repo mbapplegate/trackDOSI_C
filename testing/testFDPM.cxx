@@ -54,8 +54,8 @@ int main(void) {
   calcAmpPhaseSystemResponse(wavelength, f, SDSep, fakeAmp,fakePhase,&ampRes,&phaseRes);
   std::cout << "Amp Sys Resp: " << ampRes << std::endl
 	    << "Phase Sys Resp: " << phaseRes << std::endl;
-  
-  std::complex<float> complexRes=calcReImSystemResponse(wavelength, f, SDSep, fakeExpReIm);
+  std::complex<float> resp;
+  std::complex<float> complexRes=calcReImSystemResponse(wavelength, f, SDSep, fakeExpReIm, &resp);
   
   std::cout << "fakeExpReIm: " <<  fakeExpReIm << std::endl;
   
@@ -147,14 +147,13 @@ int main(void) {
 
   //TESTING PARTIAL DERVIATIVES/////////////////////
   std::cout << "Testing Partial Derivatives" << std::endl;
-  float muadp = 0.018416369;
-  float musdp = 0.803474193;
+
   float freq = 50;
   float sep = 10;
   float dfdp[4];
   float dp = 0.0001;
 
-  dfdp_p1seminf(muadp,musdp,freq,sep, dp, &dfdp[0]);
+  dfdp_p1seminf(785,freq,sep, dp, &dfdp[0]);
 
   std::cout << "dAmp/dMua: " << dfdp[0] << std::endl;
   std::cout << "dPhase/dMua: " << dfdp[1] << std::endl;
@@ -166,6 +165,12 @@ int main(void) {
   acsdsqd.reserve(avg.freqs.size());
   phisdsqd.reserve(avg.freqs.size());
   std::vector<std::complex<float>> sResp = sysResponseSweep(avg,&acsdsqd,&phisdsqd);
+  for (int i = 0; i<4; i++) {
+    std::cout << std::endl;
+    for (int j = 0; j< 4; j++ ) {
+      std::cout<<phisdsqd[i*4+j];
+    }
+  }
   std::vector<std::complex<float>> acal= calibrate(&expData.reim,&sResp);
   std::vector<std::complex<float>> trivialCal = calibrate(&avg.reim,&sResp);
 

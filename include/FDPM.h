@@ -46,7 +46,7 @@ std::complex<float> AmpPhase2ReIm(float, float);
 void getACRINops(int, float*, float*);
 
 void calcAmpPhaseSystemResponse(int, float, float, float, float, float*, float*);
-std::complex<float> calcReImSystemResponse(int, float, float, std::complex<float>);
+std::complex<float> calcReImSystemResponse(int, float, float, std::complex<float>,std::complex<float>*);
 
 void sysResponseSweep(int, std::vector<float>, float,std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
 
@@ -55,5 +55,5 @@ std::vector<std::complex<float>> sysResponseSweep(ASCData, std::vector<float>*, 
 void calibrate(std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>, std::vector<float>*, std::vector<float>*);
 std::vector<std::complex<float>> calibrate(const std::vector<std::complex<float>>*, const std::vector<std::complex<float>>*);
 
-void dfdp_p1seminf(float, float, float,float,float,float*);
+void dfdp_p1seminf(float, float,float,float,float*);
 #endif
