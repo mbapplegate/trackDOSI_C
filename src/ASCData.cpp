@@ -37,7 +37,7 @@ ASCData getASCData(std::string fname)
   //Open the file
   std::ifstream f (fname);
   std::string line;
-  std::string delim = ",";
+  std::string delim ;
   //Check to make sure it opened properly
   if (f.is_open()){
     //std::cout << "File open" << std::endl;
@@ -61,8 +61,18 @@ ASCData getASCData(std::string fname)
       //Wavelength is a little more involved since it's comma separated list
       else if (line.find("Laser names:") != std::string::npos) {
 	//Get the list of numbers
+
 	std::string nameStr = line.substr(13, line.length()-1);
-	while (nameStr.length() > 1) {
+	//std::cout << nameStr << std::endl;
+	if (nameStr.find(",") != std::string::npos) {
+	  delim=",";
+	}
+	else{
+	  delim=" ";
+	}
+	 
+	//std::cout << delim << std::endl;
+	while (nameStr.length() > 1 && nameStr[0] != '*') {
 	  //Get the first element of the list
 	  std::string token = nameStr.substr(0,nameStr.find(delim));
 	  //Erase the first element of the list plus the delimiter
@@ -70,6 +80,7 @@ ASCData getASCData(std::string fname)
 	  //std::cout << token << std::endl;
 	  //Parse the list
 	  thisDat.wavelengths.push_back(atoi(token.c_str()));
+	  //std::cout << token.c_str() << std::endl;
 	}
 	thisDat.nDiodes = thisDat.wavelengths.size();
       }
@@ -139,7 +150,7 @@ ASCData getASCData(std::string fname)
   }
   
   f.close();
-
+  //  std::cout << "Data file read" << std::endl;
   return thisDat;
 }
 
@@ -210,11 +221,17 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   std::vector<boost::filesystem::path> fList;
   //boost::filesystem::path root = dName;
   //Get a list of the files
-  getFiles(dName, fStr, fList);
+  int flag = getFiles(dName, fStr, fList);
+  if (flag < 0){
+    std::cerr << "No files found" << std::endl;
+    ASCData err;
+    return err;
+  }
   //std::cout << fList[0].native() << std::endl;
   //Get the absolute path of the first file
   boost::filesystem::path fullFile;
   fullFile = dName / fList[0];
+  std::cout << "After fullFile: " << fullFile.native() << std::endl;
   std::cout << "Filepath0: " << fullFile << std::endl;
   std::cout << "FList size: " << fList.size() << std::endl;
   //  std::cout << fullFile.native() << std::endl;
@@ -383,23 +400,34 @@ std::vector<float> getOneWavelengthPhase(ASCData dat,int lambdaIdx) {
 
 // return the filenames of all files that have the string fname
 // in the specified directory
-void getFiles(boost::filesystem::path root, std::string fname, std::vector<boost::filesystem::path>& ret)
+int getFiles(boost::filesystem::path root, std::string fname, std::vector<boost::filesystem::path>& ret)
 {
+
   if(!boost::filesystem::exists(root) || !boost::filesystem::is_directory(root)){
-    return;
+    return -1;
   }
   boost::filesystem::directory_iterator it(root);
   boost::filesystem::directory_iterator endit;
-  std::string testName;
+  std::string testName = "x";
   while(it != endit) {
     if(boost::filesystem::is_regular_file(*it) && it->path().extension() == ".asc") {
       testName = it->path().filename().native();
+
       if (testName.find(fname) != std::string::npos) {
+	//std::cout << testName << std::endl;
 	ret.push_back(it->path().filename());
       }
     }
     ++it;
   }
+  
+  if (ret.size() == 0) {
+    return -1;
+  }
+  else {
+    return 0;
+  }
+
 }
 
 

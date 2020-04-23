@@ -31,7 +31,7 @@ struct ASCData {
 
 ASCData getASCData(std::string);
 ASCData stripNaNFreqs(ASCData);
-void getFiles(boost::filesystem::path, std::string, std::vector<boost::filesystem::path>&);
+int getFiles(boost::filesystem::path, std::string, std::vector<boost::filesystem::path>&);
 ASCData averageASCData(boost::filesystem::path,std::string);
 std::vector<float> getOneWavelengthAmp(ASCData, int);
 std::vector<float> getOneWavelengthPhase(ASCData, int);

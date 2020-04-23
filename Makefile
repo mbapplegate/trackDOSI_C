@@ -51,4 +51,7 @@ testopencv: $(OBJECTS)
 testqt: $(OBJECTS)
 	$(CC) $^ $(CFLAGS) testing/testQT.cpp $(INC) $(LIB) $(LINKFLAGS) -o bin/testQT.out
 
-.PHONY: clean testing testFDPM testopencv testqt
+testdosigui: $(OBJECTS)
+	$(CC) $^ $(CFLAGS) testing/testVSgui.cxx $(INC) $(LIB) $(LINKFLAGS) -o bin/testdosigui.out
+
+.PHONY: clean testing testFDPM testopencv testqt testdosigui
