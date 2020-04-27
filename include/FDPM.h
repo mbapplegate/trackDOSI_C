@@ -35,7 +35,7 @@ void getModelError(const alglib::real_1d_array&, alglib::real_1d_array&, void*);
 
 float chi(const alglib::real_1d_array&, std::vector<std::complex<float>>, float, std::vector<float>);
 
-std::vector<float> runInverseModel(float,std::vector<float>, std::vector<std::complex<float>>,std::vector<float>);
+std::vector<float> runInverseModel(float,std::vector<float>, std::vector<std::complex<float>>,std::vector<float>,int);
 
 std::vector<std::complex<float>> p1Sweep(float, float,std::vector<float>, float);
 //std::vector<std::complex<float>> p1Sweep(float, float,std::vector<float>, float);

@@ -189,14 +189,9 @@ std::vector<float> wtsAmpPhase2ReIm(std::vector<float> ACsd_sqd, std::vector<flo
   }
   return result;
 }
-std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat, std::vector<float> wts){
+std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::vector<std::complex<float>> dat, std::vector<float> wts, int numLams){
 
-  inverseData d;
-  d.SDSep = SDSep;
-  d.freqs = freqs;
-  d.calDat = dat;
-  d.wts = wts;
-  int numFreqs = (int)freqs.size();
+  
   const int numStarts = 2;
   float chis[numStarts];
   //real_1d_array x;
@@ -206,43 +201,60 @@ std::vector<float> runInverseModel(float SDSep, std::vector<float> freqs, std::v
   float musGuess[numStarts] = { .8,1.3 };// {.8, 1.3, 1.0, 1.0, .6};
   float muaRec[numStarts];
   float musRec[numStarts];
-  //printf("True values: [%f,%f]\n",randMua,randMus);
-  for (int q= 0; q<numStarts; q++) {
-     
-    char buf[20];
-    sprintf(buf,"[%.4f,%.4f]",muaGuess[q],musGuess[q]);
-    alglib::real_1d_array x=buf;
-    
-    //fprintf(stderr,"q=%d\n",q); 
-    alglib::minlmstate state;
-    alglib::minlmreport rep;
-    float epsx = 1e-12;
-    alglib::ae_int_t maxits = 0;
-    alglib::real_1d_array bndl = "[.00001, .001]";
-    alglib::real_1d_array bndu = "[.5, 5]";
-    alglib::real_1d_array s = "[.01,1]";
-    //fprintf(stderr,"%f\n",x[0]);
-    alglib::minlmcreatev(2,2*numFreqs,x,0.0001,state);
-    alglib::minlmsetbc(state,bndl,bndu);
-    alglib::minlmsetcond(state,epsx,maxits);
-    alglib::minlmsetscale(state,s);
-    
-    alglib::minlmoptimize(state,getModelError,NULL,&d);
-    alglib::minlmresults(state,x,rep);
-    chis[q] = chi(x,dat,d.SDSep,d.freqs);
-    muaRec[q] = x[0];
-    musRec[q] = x[1];
-  }
-  int bestIdx = 0;
-  float bestCHI=10000;
-  for (uint32_t i = 0; i< numStarts; i++) {
-    if (chis[i] < bestCHI) {
-      bestIdx = i;
-      bestCHI = chis[i];
-    }
-  }
 
-  std::vector<float> OP{muaRec[bestIdx],musRec[bestIdx]};
+  inverseData d;
+  d.SDSep = SDSep;
+  d.freqs = freqs;
+  int numFreqs = (int)freqs.size();
+
+  
+  std::vector<float> OP;
+  OP.reserve(2*numLams);
+
+  for (int i = 0; i<numLams; i++) {
+    std::vector<std::complex<float>> oneLamCal=getOneWavelengthComplex(dat,i,numLams,numFreqs);
+    std::vector<float> oneLamWts = getOneWavelengthWts(wts, i, numLams, numFreqs);
+    d.calDat = oneLamCal;
+    d.wts = wts;  
+    //printf("True values: [%f,%f]\n",randMua,randMus);
+    for (int q= 0; q<numStarts; q++) {
+     
+      char buf[20];
+      sprintf(buf,"[%.4f,%.4f]",muaGuess[q],musGuess[q]);
+      alglib::real_1d_array x=buf;
+    
+      //fprintf(stderr,"q=%d\n",q); 
+      alglib::minlmstate state;
+      alglib::minlmreport rep;
+      float epsx = 1e-12;
+      alglib::ae_int_t maxits = 0;
+      alglib::real_1d_array bndl = "[.00001, .001]";
+      alglib::real_1d_array bndu = "[.5, 5]";
+      alglib::real_1d_array s = "[.01,1]";
+      //fprintf(stderr,"%f\n",x[0]);
+      alglib::minlmcreatev(2,2*numFreqs,x,0.0001,state);
+      alglib::minlmsetbc(state,bndl,bndu);
+      alglib::minlmsetcond(state,epsx,maxits);
+      alglib::minlmsetscale(state,s);
+      
+      alglib::minlmoptimize(state,getModelError,NULL,&d);
+      alglib::minlmresults(state,x,rep);
+      chis[q] = chi(x,dat,d.SDSep,d.freqs);
+      muaRec[q] = x[0];
+      musRec[q] = x[1];
+    }
+    int bestIdx = 0;
+    float bestCHI=10000;
+    for (uint32_t i = 0; i< numStarts; i++) {
+      if (chis[i] < bestCHI) {
+	bestIdx = i;
+	bestCHI = chis[i];
+      }
+    }
+
+    OP.push_back(muaRec[bestIdx]);
+    OP.push_back(musRec[bestIdx]);
+  }
   return OP;
 }
 

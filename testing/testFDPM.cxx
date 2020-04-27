@@ -191,7 +191,7 @@ int main(void) {
   std::vector<std::complex<float>> oneLamResp=getOneWavelengthComplex(sResp,3,4,244);
   std::vector<float> oneLamWts = getOneWavelengthWts(wts, 3, 4, 244);
 
-  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,oneLamCal,oneLamWts);
+  std::vector<float> recOP = runInverseModel(expData.SDSep, expData.freqs,acal,wts,4);
   std::cout << std::endl;
   std::cout << "mua: " << recOP[0] << ", mus: " << recOP[1] << std::endl;
   for (int q = 0; q<avg.freqs.size(); q++) {

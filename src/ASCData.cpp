@@ -82,6 +82,10 @@ ASCData getASCData(std::string fname)
 	  thisDat.wavelengths.push_back(atoi(token.c_str()));
 	  //std::cout << token.c_str() << std::endl;
 	}
+	
+	if (thisDat.wavelengths.size() > 6) {
+	  thisDat.wavelengths.erase(thisDat.wavelengths.begin()+6, thisDat.wavelengths.end());
+	}
 	thisDat.nDiodes = thisDat.wavelengths.size();
       }
       //Get the XY Position and the Angle (if available)
@@ -231,9 +235,9 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   //Get the absolute path of the first file
   boost::filesystem::path fullFile;
   fullFile = dName / fList[0];
-  std::cout << "After fullFile: " << fullFile.native() << std::endl;
-  std::cout << "Filepath0: " << fullFile << std::endl;
-  std::cout << "FList size: " << fList.size() << std::endl;
+  // std::cout << "After fullFile: " << fullFile.native() << std::endl;
+  //std::cout << "Filepath0: " << fullFile << std::endl;
+  //std::cout << "FList size: " << fList.size() << std::endl;
   //  std::cout << fullFile.native() << std::endl;
   //Set up Array of ASCData structures
   ASCData *a1 = new ASCData[fList.size()];
@@ -294,7 +298,7 @@ ASCData averageASCData(boost::filesystem::path dName, std::string fStr) {
   else {
     ret.stdAmp = multVecs(ret.amp,std::vector<float>(ret.amp.size(), 0.03));
     ret.stdPhase = std::vector<float>(ret.amp.size(), 0.3);
-    std::cout << "Only one file. STDPHASE: " << ret.stdPhase[0] << std::endl;
+    //std::cout << "Only one file. STDPHASE: " << ret.stdPhase[0] << std::endl;
   }
   //ASCData a2 = getASCData(fList[0].native());
   //ASCData a3 = getASCData(fList[1].native());
